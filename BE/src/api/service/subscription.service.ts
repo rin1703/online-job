@@ -14,6 +14,7 @@ import mongoose from "mongoose";
 import { WalletModel } from "../models/wallet.model";
 import { WalletTransactionModel } from "../models/walletTransaction.model";
 import { BuySubscriptionDTO } from "../dto/payment/createPayment.dto";
+import { checkReplicaSet } from "../../helper/database.helper";
 
 /**
  * Tạo payment link để mua subscription package
@@ -498,8 +499,11 @@ export const buySubscriptionService = async (
   }
 
   // --- Khởi tạo Transaction ATOMIC ---
-  const session = await SubscriptionModel.startSession();
-  session.startTransaction();
+  const useTransaction = await checkReplicaSet();
+  const session = useTransaction ? await SubscriptionModel.startSession() : null;
+  if (session) {
+    session.startTransaction();
+  }
 
   try {
     const transactionId = new mongoose.Types.ObjectId();
@@ -508,7 +512,7 @@ export const buySubscriptionService = async (
     const updatedWallet = await WalletModel.findOneAndUpdate(
       { _id: wallet._id, balance: { $gte: priceToPay } }, // Đảm bảo số dư đủ
       { $inc: { balance: -priceToPay } }, // Trừ tiền
-      { new: true, session } // Lấy doc mới và dùng session
+      { new: true, ...(session ? { session } : {}) } // Lấy doc mới và dùng session
     );
 
     if (!updatedWallet) {
@@ -529,7 +533,7 @@ export const buySubscriptionService = async (
           description: `Buy subscription package ${pkg.name}`,
         },
       ],
-      { session }
+      session ? { session } : undefined
     );
 
     // --- 5. Logic Nâng/Hạ cấp & Tạo Subscription ---
@@ -540,7 +544,7 @@ export const buySubscriptionService = async (
       activeSub.status = "cancelled";
       (activeSub as any).cancellationDate = startDate;
       // [TÙY CHỌN]: Thêm logic tính hoàn tiền tỷ lệ ở đây
-      await activeSub.save({ session });
+      await activeSub.save(session ? { session } : undefined);
     }
 
     // 5b. Tính toán EndDate mới (Bắt đầu từ ngày mua)
@@ -562,12 +566,14 @@ export const buySubscriptionService = async (
           features: pkg.features,
         },
       ],
-      { session }
+      session ? { session } : undefined
     );
 
     // COMMIT Giao dịch
-    await session.commitTransaction();
-    session.endSession();
+    if (session) {
+      await session.commitTransaction();
+      session.endSession();
+    }
 
     return {
       message: "Subscription updated/activated successfully",
@@ -576,8 +582,10 @@ export const buySubscriptionService = async (
     };
   } catch (error) {
     // ROLLBACK nếu có lỗi xảy ra
-    await session.abortTransaction();
-    session.endSession();
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     console.error("Subscription purchase transaction failed:", error);
     throw error;
   }

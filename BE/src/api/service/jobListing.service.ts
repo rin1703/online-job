@@ -530,12 +530,18 @@ export const createJobListingService = async (
   }
 
   // 4) Resolve jobType by name (case-insensitive)
-  const jt = await JobTypeModel.findOne({
+  let jt = await JobTypeModel.findOne({
     name: new RegExp(`^${dto.jobType}$`, "i"),
   })
     .select("_id")
     .lean<{ _id: Types.ObjectId | string } | null>();
-  if (!jt) throw new Error("Invalid job type");
+  if (!jt) {
+    const newJt = await JobTypeModel.create({
+      name: dto.jobType,
+      description: `${dto.jobType} job position`,
+    });
+    jt = { _id: newJt._id };
+  }
   const jobTypeId = new Types.ObjectId((jt._id as any).toString());
 
   // 5) Create job listing
@@ -621,12 +627,15 @@ export const updateJobCore = async (
 
   // Nếu `jobType` là chuỗi, tìm `jobTypeId` tương ứng
   if (dto.jobType) {
-    const jobType = await JobTypeModel.findOne({
+    let jobType = await JobTypeModel.findOne({
       name: new RegExp(`^${dto.jobType}$`, "i"), // Tìm theo tên không phân biệt hoa thường
     }).select("_id");
 
     if (!jobType) {
-      throw new Error(`Invalid job type: ${dto.jobType}`);
+      jobType = await JobTypeModel.create({
+        name: dto.jobType,
+        description: `${dto.jobType} job position`,
+      });
     }
 
     updateFields.jobTypeId = jobType._id; // Cập nhật `jobTypeId`

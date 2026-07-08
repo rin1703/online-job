@@ -23,8 +23,33 @@ export const connectToDatabase = async (): Promise<void> => {
     });
     
     logSuccessfulConnection();
+    await seedDefaultJobTypes();
   } catch (error) {
     handleConnectionError(error);
+  }
+};
+
+const seedDefaultJobTypes = async () => {
+  try {
+    const JobTypeModel = (await import("../api/models/jobType.model")).default;
+    const defaultTypes = [
+      { name: "Full-time", description: "Full-time job position" },
+      { name: "Part-time", description: "Part-time job position" },
+      { name: "Contract", description: "Contract-based job position" },
+      { name: "Internship", description: "Internship position" },
+      { name: "Freelance", description: "Freelance job position" },
+    ];
+
+    for (const jt of defaultTypes) {
+      await JobTypeModel.updateOne(
+        { name: new RegExp(`^${jt.name.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") },
+        { $setOnInsert: jt },
+        { upsert: true }
+      );
+    }
+    console.log("🌱 Default job types seeded/verified successfully");
+  } catch (error) {
+    console.warn("⚠️ Failed to seed default job types:", error);
   }
 };
 

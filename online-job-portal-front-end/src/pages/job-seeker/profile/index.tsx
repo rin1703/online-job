@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ProfileContent from "@/features/job-seeker/components/profile/components/ProfileContent.tsx";
 import { ProfileSidebar } from "@/features/job-seeker/components/profile/components/ProfileSidebar.tsx";
 import { getErrorMessage } from "@/features/job-seeker/components/profile/utils/errorHandler";
-import { useGetProfileQuery, useUpdateProfileMutation } from "@/redux/features/profile";
+import { useGetProfileQuery, useUpdateProfileMutation, type UserProfile } from "@/redux/features/profile";
 import type { RootState } from "@/redux/store";
 
 export default function ProfilePage() {
@@ -44,7 +44,7 @@ export default function ProfilePage() {
   };
 
   // Create default empty profile for new users
-  const getProfileData = () => {
+  const getProfileData = (): UserProfile => {
     if (profile) {
       return {
         ...profile,
@@ -74,6 +74,8 @@ export default function ProfilePage() {
         _id: userId || "",
         role: "job_seeker" as const,
         email: "",
+        firstName: "",
+        lastName: "",
       },
       name: userName || "",
       avatar: "",

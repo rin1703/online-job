@@ -169,7 +169,7 @@ export default function JobManagementPage() {
         toast.success("Job created successfully!");
         setIsCreateModalOpen(false);
       })
-      .catch(() => toast.error("Failed to create job"));
+      .catch((err: any) => toast.error(err?.data?.message || "Failed to create job"));
   };
 
   const handleUpdateJobSubmit = (data: JobFormValues) => {
@@ -182,7 +182,7 @@ export default function JobManagementPage() {
         setIsEditModalOpen(false);
         setJobToEdit(null);
       })
-      .catch(() => toast.error("Failed to update job"));
+      .catch((err: any) => toast.error(err?.data?.message || "Failed to update job"));
   };
 
   const handleEditJob = (jobId: string) => {
@@ -205,14 +205,14 @@ export default function JobManagementPage() {
         setDeleteModalOpen(false);
         setJobToDelete(null);
       })
-      .catch(() => toast.error("Failed to delete job"));
+      .catch((err: any) => toast.error(err?.data?.message || "Failed to delete job"));
   };
 
   const handleChangeStatus = (id: string, status: "active" | "hidden" | "closed" | "draft") => {
     changeJobStatus({ id, data: { status } })
       .unwrap()
       .then(() => toast.success(`Status changed to "${status}"`))
-      .catch(() => toast.error("Failed to update status"));
+      .catch((err: any) => toast.error(err?.data?.message || "Failed to update status"));
   };
 
   const openStatusDialog = (id: string, status: "active" | "closed") => {

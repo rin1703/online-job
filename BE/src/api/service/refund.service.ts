@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { WalletModel } from "../models/wallet.model";
 import { WalletTransactionModel } from "../models/walletTransaction.model";
+import { checkReplicaSet } from "../../helper/database.helper";
 import {
   RefundTransactionInternalDTO,
   CancelUnusedPackageDTO,
@@ -20,8 +21,11 @@ import {
 export const coreRefundTransaction = async (
   dto: RefundTransactionInternalDTO
 ) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const useTransaction = await checkReplicaSet();
+  const session = useTransaction ? await mongoose.startSession() : null;
+  if (session) {
+    session.startTransaction();
+  }
 
   try {
     const { recruiterId, amount, reference, description } = dto;
@@ -31,7 +35,7 @@ export const coreRefundTransaction = async (
 
     // Cộng tiền lại ví
     wallet.balance += amount;
-    await wallet.save({ session });
+    await wallet.save(session ? { session } : undefined);
 
     // Ghi giao dịch
     await WalletTransactionModel.create(
@@ -44,16 +48,20 @@ export const coreRefundTransaction = async (
           description,
         },
       ],
-      { session }
+      session ? { session } : undefined
     );
 
-    await session.commitTransaction();
-    session.endSession();
+    if (session) {
+      await session.commitTransaction();
+      session.endSession();
+    }
 
     return { balance: wallet.balance, refunded: amount };
   } catch (err) {
-    await session.abortTransaction();
-    session.endSession();
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     throw err;
   }
 };
