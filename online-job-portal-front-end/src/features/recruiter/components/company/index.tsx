@@ -539,9 +539,9 @@ export const CompanyForm = ({
         <InputField label="Email" icon={Mail} error={errors.email?.message}>
           <input
             {...register("email")}
-            disabled={readOnly}
+            disabled={true}
             placeholder="contact@company.com"
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:bg-gray-50 disabled:text-gray-500"
+            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white disabled:bg-white disabled:text-gray-500 cursor-not-allowed"
           />
         </InputField>
 

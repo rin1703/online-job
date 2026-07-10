@@ -10,6 +10,7 @@ import JobListingModel from "../models/jobListing.model";
 import { PaymentModel } from "../models/payment.model";
 import { GetUserAccountListDTO, UserAccountItemDTO, UserStatisticsDTO, UserStatusDTO } from "../dto/userAccountList.dto";
 import { BanUserDTO, BanUserResponseDTO } from "../dto/banUser.dto";
+import { ActivityItemDTO } from "../dto/userActivity.dto";
 import { DeleteUserDTO, DeleteUserResponseDTO } from "../dto/softDeleteUser.dto";
 import { BanDuration, getBanDurationInMilliseconds, getBanDurationLabel } from "../models/enum/banDuration.enum";
 import { validatePaginationParams, calculateTotalPages } from "../../helper/pagination.helper";
@@ -418,3 +419,140 @@ function buildFiltersResponse(dto: GetUserAccountListDTO): {
     },
   };
 }
+
+/**
+ * Lấy danh sách hoạt động chi tiết của người dùng theo role
+ */
+export const getUserActivitiesService = async (
+  userId: string
+): Promise<{ success: boolean; message: string; data: ActivityItemDTO[] }> => {
+  try {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("ID người dùng không hợp lệ");
+    }
+    const user = await User.findById(userId) as any;
+    if (!user) throw new Error("Không tìm thấy người dùng");
+
+    const activities: ActivityItemDTO[] = [];
+
+    if (user.role === UserRole.JOB_SEEKER) {
+      // 1. Applications
+      const applications = await Application.find({ jobSeekerId: user._id })
+        .populate("jobId", "title companyName")
+        .populate("recruiterId", "firstName lastName email")
+        .sort({ createdAt: -1 })
+        .lean() as any[];
+
+      for (const app of applications) {
+        activities.push({
+          id: app._id.toString(),
+          type: "application",
+          title: `Ứng tuyển vị trí ${app.jobId?.title || "Không rõ"}`,
+          subtitle: `Tại doanh nghiệp: ${app.jobId?.companyName || "Chưa xác định"}`,
+          status: app.status,
+          date: app.createdAt || app.appliedAt || new Date(),
+          details: {
+            jobId: app.jobId?._id?.toString(),
+            recruiterName: app.recruiterId ? `${app.recruiterId.firstName} ${app.recruiterId.lastName}`.trim() : undefined,
+            coverLetter: app.coverLetter,
+            resumeUrl: app.resumeUrl || app.resume,
+          }
+        });
+      }
+
+      // 2. Interviews
+      const interviews = await Interview.find({ jobSeekerId: user._id })
+        .populate("jobId", "title")
+        .sort({ scheduledDate: -1 })
+        .lean() as any[];
+
+      for (const iv of interviews) {
+        activities.push({
+          id: iv._id.toString(),
+          type: "interview",
+          title: `Lịch hẹn phỏng vấn: ${iv.jobId?.title || "Không rõ"}`,
+          subtitle: `Thời gian: ${iv.scheduledTime} - ${new Date(iv.scheduledDate).toLocaleDateString('vi-VN')}`,
+          status: iv.status,
+          date: iv.scheduledDate,
+          details: {
+            meetingLink: iv.meetingLink,
+            location: iv.location,
+            note: iv.note,
+          }
+        });
+      }
+    } else if (user.role === UserRole.RECRUITER) {
+      // 1. Job posts
+      const jobPosts = await JobListingModel.find({ recruiterId: user._id, isDeleted: { $ne: true } })
+        .sort({ createdAt: -1 })
+        .lean() as any[];
+
+      for (const jp of jobPosts) {
+        activities.push({
+          id: jp._id.toString(),
+          type: "job_post",
+          title: `Đăng tin tuyển dụng: ${jp.title}`,
+          subtitle: `Mức lương: ${jp.salaryMin ? `${jp.salaryMin} - ${jp.salaryMax || 'Không giới hạn'}` : "Thỏa thuận"}`,
+          status: jp.approvalStatus || jp.status,
+          date: jp.createdAt,
+          details: {
+            location: jp.location,
+            jobType: jp.jobType,
+          }
+        });
+      }
+
+      // 2. Payments
+      const payments = await PaymentModel.find({ recruiterId: user._id })
+        .sort({ createdAt: -1 })
+        .lean() as any[];
+
+      for (const pm of payments) {
+        activities.push({
+          id: pm._id.toString(),
+          type: "payment",
+          title: `Giao dịch: ${pm.description || "Nạp tiền/Mua gói"}`,
+          subtitle: `Mã đơn: ${pm.orderCode} - Số tiền: ${pm.amount.toLocaleString('vi-VN')} VNĐ`,
+          status: pm.status,
+          date: pm.createdAt,
+          details: {
+            purpose: pm.purpose,
+            refundStatus: pm.refundStatus,
+          }
+        });
+      }
+
+      // 3. Interviews
+      const interviews = await Interview.find({ recruiterId: user._id })
+        .populate("jobId", "title")
+        .sort({ scheduledDate: -1 })
+        .lean() as any[];
+
+      for (const iv of interviews) {
+        activities.push({
+          id: iv._id.toString(),
+          type: "interview",
+          title: `Tạo lịch phỏng vấn cho ${iv.jobId?.title || "Ứng viên"}`,
+          subtitle: `Thời gian: ${iv.scheduledTime} - ${new Date(iv.scheduledDate).toLocaleDateString('vi-VN')}`,
+          status: iv.status,
+          date: iv.scheduledDate,
+          details: {
+            meetingLink: iv.meetingLink,
+            location: iv.location,
+          }
+        });
+      }
+    }
+
+    // Sort all activities by date descending
+    activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return {
+      success: true,
+      message: "Lấy lịch sử hoạt động chi tiết thành công",
+      data: activities,
+    };
+  } catch (error: any) {
+    throw new Error(`Lỗi khi lấy lịch sử hoạt động người dùng: ${error.message}`);
+  }
+};

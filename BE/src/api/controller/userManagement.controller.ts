@@ -14,7 +14,8 @@ import {
   unbanUserService,
   deleteUserService,
   restoreUserService,
-  getUserAccountListService
+  getUserAccountListService,
+  getUserActivitiesService
 } from "../service/userManagement.service";
 import {
   sendSuccessResponse,
@@ -201,6 +202,32 @@ export const handleGetUserAccountList = async (
     sendErrorResponse(
       res,
       error.message || "Lỗi khi lấy danh sách người dùng",
+      HTTP_STATUS.INTERNAL_SERVER_ERROR
+    );
+  }
+};
+
+/**
+ * Lấy danh sách lịch sử hoạt động chi tiết của người dùng
+ * GET /api/v1/admin/users/:userId/activities
+ */
+export const handleGetUserActivities = async (
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const userId = getParamString(req.params.userId, "userId");
+    const result = await getUserActivitiesService(userId);
+    res.status(HTTP_STATUS.OK).json({
+      success: result.success,
+      message: result.message,
+      data: result.data,
+    });
+  } catch (error: any) {
+    console.error("Error in handleGetUserActivities:", error);
+    sendErrorResponse(
+      res,
+      error.message || "Lỗi khi lấy hoạt động người dùng",
       HTTP_STATUS.INTERNAL_SERVER_ERROR
     );
   }

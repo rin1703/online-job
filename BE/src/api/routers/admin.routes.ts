@@ -16,7 +16,8 @@ import {
   handleBanUser,
   handleUnbanUser,
   handleDeleteUser,
-  handleRestoreUser
+  handleRestoreUser,
+  handleGetUserActivities
 } from "../controller/userManagement.controller";
 import { handleGetAdminDashboardStats } from "../controller/adminDashboard.controller";
 
@@ -51,6 +52,17 @@ adminRouter.get(
   requireRole(UserRole.ADMIN),
   validateUserAccountList,
   handleGetUserAccountList
+);
+
+/**
+ * GET /api/v1/admin/users/:userId/activities
+ * Lấy lịch sử hoạt động chi tiết của người dùng (Admin only)
+ */
+adminRouter.get(
+  "/users/:userId/activities",
+  verifyToken,
+  requireRole(UserRole.ADMIN),
+  handleGetUserActivities
 );
 
 /**

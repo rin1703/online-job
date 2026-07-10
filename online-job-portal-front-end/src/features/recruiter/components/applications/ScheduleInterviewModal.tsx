@@ -26,6 +26,13 @@ interface ScheduleInterviewModalProps {
   jobTitle: string;
 }
 
+const getLocalDateString = (d: Date) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const DURATION_OPTIONS = [
   { value: 30, label: '30 minutes' },
   { value: 60, label: '1 hour' },
@@ -61,7 +68,14 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
 
     // Validation
     if (!formData.scheduledDate || !formData.scheduledTime) {
-      toast.error('Please select date and time');
+      toast.error('Vui lòng chọn ngày và giờ phỏng vấn');
+      return;
+    }
+
+    const selectedDateTime = new Date(`${formData.scheduledDate}T${formData.scheduledTime}`);
+    const minDateTime = new Date(Date.now() + 30 * 60 * 1000);
+    if (selectedDateTime < minDateTime) {
+      toast.error('Thời gian đặt lịch tối thiểu phải cách hiện tại 30 phút');
       return;
     }
 
@@ -102,8 +116,25 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
     resetForm();
   };
 
-  // Get min date (today)
-  const today = new Date().toISOString().split('T')[0];
+  // Tính thời gian tối thiểu (cách hiện tại 30 phút)
+  const minDateTime = new Date(Date.now() + 30 * 60 * 1000);
+  const minDateStr = getLocalDateString(minDateTime);
+  const minHour = minDateTime.getHours();
+  const minMinute = minDateTime.getMinutes();
+
+  const isTodaySelected = formData.scheduledDate === minDateStr;
+
+  const timeOptions = Array.from({ length: 48 }).map((_, i) => {
+    const hour = Math.floor(i / 2).toString().padStart(2, '0');
+    const minute = i % 2 === 0 ? '00' : '30';
+    return `${hour}:${minute}`;
+  }).filter((timeStr) => {
+    if (!isTodaySelected) return true;
+    const [h, m] = timeStr.split(':').map(Number);
+    if (h > minHour) return true;
+    if (h === minHour && m >= minMinute) return true;
+    return false;
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -130,7 +161,7 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
               <Input
                 id="date"
                 type="date"
-                min={today}
+                min={minDateStr}
                 value={formData.scheduledDate}
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, scheduledDate: e.target.value }))
@@ -143,15 +174,25 @@ export const ScheduleInterviewModal: React.FC<ScheduleInterviewModalProps> = ({
               <Label htmlFor="time" className="required">
                 Interview Time
               </Label>
-              <Input
-                id="time"
-                type="time"
+              <Select
                 value={formData.scheduledTime}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, scheduledTime: e.target.value }))
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, scheduledTime: value }))
                 }
-                required
-              />
+              >
+                <SelectTrigger id="time">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  {timeOptions.map((timeStr) => {
+                    return (
+                      <SelectItem key={timeStr} value={timeStr}>
+                        {timeStr}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -38,6 +38,7 @@ import {
   useDeleteUserMutation,
   useRestoreUserMutation,
   useSendEmailMutation,
+  useGetUserActivitiesQuery,
   useGetRecruitersQuery,
   useGetPendingRecruitersQuery,
   useApproveRecruiterMutation,
@@ -82,6 +83,80 @@ const RECRUITER_STATUS_COLORS: Record<string, string> = {
   approved: 'bg-blue-100 text-blue-800',
   active: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
+};
+
+const UserActivitiesTimeline = ({ userId }: { userId: string }) => {
+  const { data: response, isLoading, isError } = useGetUserActivitiesQuery(userId);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        <span className="ml-2 text-sm text-gray-500">Đang tải lịch sử hoạt động...</span>
+      </div>
+    );
+  }
+
+  if (isError || !response?.success) {
+    return (
+      <div className="text-center py-6 text-sm text-red-500">
+        Không thể tải lịch sử hoạt động.
+      </div>
+    );
+  }
+
+  const activities = response.data || [];
+
+  if (activities.length === 0) {
+    return (
+      <div className="text-center py-8 text-sm text-gray-400">
+        Không có lịch sử hoạt động nào được ghi nhận.
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative pl-6 border-l border-gray-200 space-y-6 max-h-[300px] overflow-y-auto mt-2">
+      {activities.map((act: any) => {
+        let iconBg = "bg-blue-100 text-blue-600";
+        if (act.type === "application") {
+          iconBg = "bg-green-100 text-green-600";
+        } else if (act.type === "interview") {
+          iconBg = "bg-purple-100 text-purple-600";
+        } else if (act.type === "payment") {
+          iconBg = "bg-yellow-100 text-yellow-600";
+        } else if (act.type === "job_post") {
+          iconBg = "bg-blue-100 text-blue-600";
+        }
+
+        const displayStatus = act.status ? act.status.toUpperCase() : "N/A";
+
+        return (
+          <div key={act.id} className="relative">
+            <span className={`absolute -left-[37px] top-1 flex h-6 w-6 items-center justify-center rounded-full ${iconBg} ring-8 ring-white text-xs font-bold`}>
+              {act.type === "application" && "A"}
+              {act.type === "interview" && "I"}
+              {act.type === "payment" && "P"}
+              {act.type === "job_post" && "J"}
+            </span>
+
+            <div>
+              <div className="flex justify-between items-start">
+                <h4 className="font-semibold text-sm text-gray-900">{act.title}</h4>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-800 uppercase">
+                  {displayStatus}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">{act.subtitle}</p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                {new Date(act.date).toLocaleString('vi-VN')}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export default function UsersManagement() {
@@ -1115,33 +1190,71 @@ export default function UsersManagement() {
       {/* Modals */}
 
       {/* Detail Modal */}
-      <Dialog open={modalMode === 'detail'} onOpenChange={() => setModalMode(null)}>
-        <DialogContent>
-          {selectedUser && (
+      <Dialog open={modalMode === 'detail'} onOpenChange={(open) => {
+        if (!open) {
+          setModalMode(null);
+          setSelectedUser(null);
+          setSelectedRecruiter(null);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          {(selectedUser || selectedRecruiter) && (
             <>
               <DialogHeader>
-                <DialogTitle>User Details</DialogTitle>
-                <DialogDescription>{selectedUser.fullName}</DialogDescription>
+                <DialogTitle>Chi tiết người dùng</DialogTitle>
+                <DialogDescription>
+                  {selectedUser?.fullName || selectedRecruiter?.fullName || 'N/A'}
+                </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2 text-sm">
-                <p><b>Email:</b> {selectedUser.email}</p>
-                <p><b>Status:</b> {getStatusBadge(selectedUser)}</p>
-                <p><b>Role:</b> {ROLE_LABELS[selectedUser.role]}</p>
-                <p><b>Phone:</b> {selectedUser.phone}</p>
-                <p><b>Created:</b> {new Date(selectedUser.createdAt).toLocaleString('vi-VN')}</p>
-                {selectedUser.statistics.totalApplications !== undefined && (
-                  <p><b>Applications:</b> {selectedUser.statistics.totalApplications}</p>
-                )}
-                {selectedUser.statistics.totalJobPosts !== undefined && (
-                  <p><b>Job Posts:</b> {selectedUser.statistics.totalJobPosts}</p>
-                )}
-                {selectedUser.status.isLocked && selectedUser.status.lockUntil && (
-                  <p><b>Locked Until:</b> {new Date(selectedUser.status.lockUntil).toLocaleString('vi-VN')}</p>
-                )}
-              </div>
-              <DialogFooter>
-                <ButtonLowercase onClick={() => setModalMode(null)}>
-                  Close
+
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="info">Thông tin</TabsTrigger>
+                  <TabsTrigger value="activities">Hoạt động</TabsTrigger>
+                </TabsList>
+                <TabsContent value="info" className="mt-4 space-y-3 text-sm">
+                  {selectedUser && (
+                    <>
+                      <p><b>Họ và tên:</b> {selectedUser.fullName}</p>
+                      <p><b>Email:</b> {selectedUser.email}</p>
+                      <p><b>Số điện thoại:</b> {selectedUser.phone || 'N/A'}</p>
+                      <p><b>Vai trò:</b> {ROLE_LABELS[selectedUser.role]}</p>
+                      <p><b>Trạng thái:</b> {getStatusBadge(selectedUser)}</p>
+                      <p><b>Ngày tham gia:</b> {new Date(selectedUser.createdAt).toLocaleDateString('vi-VN')}</p>
+                      {selectedUser.statistics.totalApplications !== undefined && (
+                        <p><b>Số lượt ứng tuyển:</b> {selectedUser.statistics.totalApplications}</p>
+                      )}
+                      {selectedUser.statistics.totalJobPosts !== undefined && (
+                        <p><b>Số tin tuyển dụng:</b> {selectedUser.statistics.totalJobPosts}</p>
+                      )}
+                    </>
+                  )}
+                  {selectedRecruiter && !selectedUser && (
+                    <>
+                      <p><b>Họ và tên nhà tuyển dụng:</b> {selectedRecruiter.fullName}</p>
+                      <p><b>Email:</b> {selectedRecruiter.email}</p>
+                      <p><b>Số điện thoại:</b> {selectedRecruiter.phone || 'N/A'}</p>
+                      <p><b>Tên công ty:</b> {selectedRecruiter.companyName || 'N/A'}</p>
+                      <p><b>Trạng thái tài khoản:</b> {selectedRecruiter.accountStatus}</p>
+                      <p><b>Ngày đăng ký:</b> {new Date(selectedRecruiter.createdAt).toLocaleDateString('vi-VN')}</p>
+                      {selectedRecruiter.rejectionReason && (
+                        <p className="text-red-500"><b>Lý do từ chối:</b> {selectedRecruiter.rejectionReason}</p>
+                      )}
+                    </>
+                  )}
+                </TabsContent>
+                <TabsContent value="activities" className="mt-4">
+                  <UserActivitiesTimeline userId={selectedUser?._id || selectedRecruiter?._id || ''} />
+                </TabsContent>
+              </Tabs>
+
+              <DialogFooter className="mt-4">
+                <ButtonLowercase onClick={() => {
+                  setModalMode(null);
+                  setSelectedUser(null);
+                  setSelectedRecruiter(null);
+                }}>
+                  Đóng
                 </ButtonLowercase>
               </DialogFooter>
             </>
@@ -1194,37 +1307,6 @@ export default function UsersManagement() {
         onClose={() => setModalMode(null)}
       />
 
-      {/* Recruiter Detail Modal */}
-      <Dialog open={modalMode === 'detail' && selectedRecruiter !== null} onOpenChange={() => setModalMode(null)}>
-        <DialogContent>
-          {selectedRecruiter && (
-            <>
-              <DialogHeader>
-                <DialogTitle>Recruiter Details</DialogTitle>
-                <DialogDescription>{selectedRecruiter.fullName || 'Unknown Recruiter'}</DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2 text-sm">
-                <p><b>Email:</b> {selectedRecruiter.email || 'N/A'}</p>
-                <p><b>Phone:</b> {selectedRecruiter.phone || 'N/A'}</p>
-                <p><b>Company:</b> {selectedRecruiter.companyName || 'N/A'}</p>
-                <p><b>Status:</b> {selectedRecruiter.accountStatus}</p>
-                <p><b>Applied:</b> {new Date(selectedRecruiter.createdAt).toLocaleString('vi-VN')}</p>
-                {selectedRecruiter.accountStatus === 'rejected' && selectedRecruiter.rejectionReason && (
-                  <p><b>Rejection Reason:</b> {selectedRecruiter.rejectionReason}</p>
-                )}
-                {selectedRecruiter.reviewedAt && (
-                  <p><b>Reviewed:</b> {new Date(selectedRecruiter.reviewedAt).toLocaleString('vi-VN')}</p>
-                )}
-              </div>
-              <DialogFooter>
-                <ButtonLowercase onClick={() => setModalMode(null)}>
-                  Close
-                </ButtonLowercase>
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Approve Recruiter Modal */}
       <ApproveRecruiterModal

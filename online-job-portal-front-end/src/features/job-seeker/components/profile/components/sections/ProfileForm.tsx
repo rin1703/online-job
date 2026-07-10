@@ -151,7 +151,7 @@ export function ProfileForm({ profile, onUpdate, isAccountSection = false }: Pro
         <h3 className="text-lg font-medium text-foreground mb-4">Personal Information</h3>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <InputField id="name" label="Full Name" value={formData.name} onChange={handleInputChange} />
-          <InputField id="email" label="Email Address" type="email" value={formData.email} onChange={handleInputChange} />
+          <InputField id="email" label="Email Address" type="email" value={formData.email} onChange={handleInputChange} disabled={true} />
           <InputField id="phone" label="Phone Number" type="tel" value={formData.phone} onChange={handleInputChange} />
           <div className="md:col-span-2">
             <label htmlFor="location" className="text-sm font-medium text-foreground">Location</label>

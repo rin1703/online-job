@@ -243,6 +243,17 @@ export const adminApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * GET /api/v1/admin/users/:userId/activities
+     * Get detailed activity log of a user
+     */
+    getUserActivities: builder.query<{ success: boolean; data: any[] }, string>({
+      query: (userId) => ({
+        url: `/admin/users/${userId}/activities`,
+        method: 'GET',
+      }),
+    }),
+
+    /**
      * PUT /api/v1/admin/users/:userId/ban
      * Ban user with duration
      */
@@ -425,6 +436,7 @@ export const {
   useDeleteUserMutation,
   useRestoreUserMutation,
   useSendEmailMutation,
+  useGetUserActivitiesQuery,
   useGetRecruitersQuery,
   useLazyGetRecruitersQuery,
   useGetPendingRecruitersQuery,

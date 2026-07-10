@@ -45,7 +45,7 @@ export const registerJobSeeker = async (
   try {
     // Validation đã được xử lý ở middleware
     const user = await registerUserService(req.body);
-    
+
     if (!user) {
       sendErrorResponse(
         res,
@@ -54,7 +54,7 @@ export const registerJobSeeker = async (
       );
       return;
     }
-    
+
     sendSuccessResponse(
       res,
       SUCCESS_MESSAGES.JOB_SEEKER_REGISTRATION_SUCCESS,
@@ -75,7 +75,7 @@ export const registerRecruiter = async (req: Request, res: Response): Promise<vo
     // Validation đã được xử lý ở middleware
     const dto = new RegisterRecruiterDTO(req.body);
     const user = await registerRecruiterService(dto);
-    
+
     if (!user) {
       sendErrorResponse(
         res,
@@ -84,7 +84,7 @@ export const registerRecruiter = async (req: Request, res: Response): Promise<vo
       );
       return;
     }
-    
+
     sendSuccessResponse(
       res,
       SUCCESS_MESSAGES.RECRUITER_REGISTRATION_SUCCESS,
