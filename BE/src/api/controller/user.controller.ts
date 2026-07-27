@@ -140,3 +140,39 @@ export const logout = async (req: AuthenticatedRequest, res: Response): Promise<
     sendErrorResponse(res, error.message || "Lỗi khi đăng xuất", HTTP_STATUS.INTERNAL_SERVER_ERROR);
   }
 };
+
+/**
+ * Search job seekers by name or email
+ * GET /user/search-jobseekers?q=keyword
+ */
+export const searchJobSeekers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const query = req.query.q as string;
+    if (!query) {
+      sendSuccessResponse(res, SUCCESS_MESSAGES.USERS_FETCHED, []);
+      return;
+    }
+
+    const keyword = query.trim();
+
+    // Find users who are job seekers, active, and not deleted, matching name or email
+    const users = await User.find({
+      role: "job_seeker",
+      isActive: true,
+      isDeleted: { $ne: true },
+      $or: [
+        { email: { $regex: keyword, $options: "i" } },
+        { firstName: { $regex: keyword, $options: "i" } },
+        { lastName: { $regex: keyword, $options: "i" } },
+      ],
+    })
+      .select("firstName lastName email role profileId")
+      .limit(10)
+      .lean();
+
+    sendSuccessResponse(res, SUCCESS_MESSAGES.USERS_FETCHED, users);
+  } catch (error) {
+    handleInternalError(res, error, "Searching job seekers");
+  }
+};
+

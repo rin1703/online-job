@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAllUsers, registerJobSeeker, registerRecruiter, login, logout } from "../controller/user.controller";
+import { getAllUsers, registerJobSeeker, registerRecruiter, login, logout, searchJobSeekers } from "../controller/user.controller";
 import {
   validateUserRegistration,
   validateRecruiterRegistration,
@@ -22,6 +22,12 @@ const router: Router = Router();
 
 // Remove /user from here since we'll define it in index.router.ts
 router.get("/", getAllUsers);
+
+/**
+ * GET /search-jobseekers - Search job seekers by name or email
+ */
+router.get("/search-jobseekers", verifyToken, searchJobSeekers);
+
 
 /**
  * POST /auth/register - Register new job seeker

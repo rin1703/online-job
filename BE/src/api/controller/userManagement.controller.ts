@@ -188,8 +188,8 @@ export const handleGetUserAccountList = async (
       sortOrder: req.query.sortOrder as string | undefined,
     });
 
-    const result = await getUserAccountListService(dto);
-
+    const result = await getUserAccountListService(dto)
+    console.log(result);
     res.status(HTTP_STATUS.OK).json({
       success: result.success,
       message: result.message,

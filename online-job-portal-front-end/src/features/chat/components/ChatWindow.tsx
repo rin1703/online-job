@@ -84,10 +84,8 @@ export function ChatWindow({
                             >
                                 {partner.role === "recruiter" ? "💼 Recruiter" : "🎯 Job Seeker"}
                             </span>
-                            <div className="flex items-center gap-1 text-xs">
-                                <OnlineStatus isOnline={onlineUsers.has(partner.email)} />
-                            </div>
                         </div>
+
                     </div>
                 </div>
             ) : (

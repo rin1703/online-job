@@ -3,6 +3,7 @@ import { Avatar } from "./Avatar";
 import { getRelativeTime, getDisplayName } from "../utils/chat.utils";
 import type { Conversation, UserData, ChatUser } from "../types";
 import { Paperclip } from "lucide-react";
+import { useSearchJobSeekersQuery } from "@/redux/features/chat/chatApi";
 
 interface ChatSidebarProps {
     currentUser: UserData;
@@ -25,6 +26,14 @@ export function ChatSidebar({
 }: ChatSidebarProps) {
     const [newChatInput, setNewChatInput] = useState("");
     const [showNewChatForm, setShowNewChatForm] = useState(false);
+
+    // Call search API when input changes
+    const { data: searchResults = [], isFetching } = useSearchJobSeekersQuery(
+        newChatInput,
+        {
+            skip: !newChatInput.trim(),
+        }
+    );
 
     const userDisplayName = getDisplayName(currentUser.email, currentUser.name);
 
@@ -90,43 +99,53 @@ export function ChatSidebar({
                             type="text"
                             value={newChatInput}
                             onChange={(e) => setNewChatInput(e.target.value)}
-                            placeholder="Enter partner email..."
+                            placeholder="Enter partner name or email..."
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
                             autoFocus
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && newChatInput.trim()) {
-                                    onSelectPartner(newChatInput.trim());
-                                    setNewChatInput("");
-                                    setShowNewChatForm(false);
-                                }
-                            }}
                         />
+                        
+                        {newChatInput.trim() && (
+                            <div className="mb-2 max-h-40 overflow-y-auto bg-white border border-gray-200 rounded-lg shadow-sm divide-y divide-gray-100">
+                                {isFetching && (
+                                    <div className="p-2 text-xs text-gray-500 text-center">Searching...</div>
+                                )}
+                                {!isFetching && searchResults.length === 0 && (
+                                    <div className="p-2 text-xs text-gray-500 text-center">No job seekers found</div>
+                                )}
+                                {!isFetching && searchResults.map((user) => (
+                                    <div
+                                        key={user._id}
+                                        onClick={() => {
+                                            onSelectPartner(user._id);
+                                            setNewChatInput("");
+                                            setShowNewChatForm(false);
+                                        }}
+                                        className="p-2 hover:bg-orange-50 cursor-pointer flex flex-col transition-colors"
+                                    >
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {user.firstName} {user.lastName}
+                                        </span>
+                                        <span className="text-xs text-gray-500">{user.email}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
                         <div className="flex gap-2">
                             <button
                                 onClick={() => {
-                                    if (newChatInput.trim()) {
-                                        onSelectPartner(newChatInput.trim());
-                                        setNewChatInput("");
-                                        setShowNewChatForm(false);
-                                    }
-                                }}
-                                className="flex-1 bg-orange-500 text-white px-3 py-1.5 rounded text-xs hover:bg-orange-600 font-semibold"
-                            >
-                                Start
-                            </button>
-                            <button
-                                onClick={() => {
                                     setShowNewChatForm(false);
                                     setNewChatInput("");
                                 }}
-                                className="flex-1 bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-300"
+                                className="flex-1 bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-300 font-semibold"
                             >
-                                Cancel
+                                Close
                             </button>
                         </div>
                     </div>
                 )}
             </div>
+
 
             {/* Conversations List */}
             <div className="flex-1 overflow-y-auto">
@@ -154,9 +173,6 @@ export function ChatSidebar({
                             <div className="flex items-start gap-3">
                                 <div className="relative">
                                     <Avatar name={partnerName} role={partner.role} />
-                                    {isOnline && (
-                                        <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                                    )}
                                 </div>
 
                                 <div className="flex-1 min-w-0">

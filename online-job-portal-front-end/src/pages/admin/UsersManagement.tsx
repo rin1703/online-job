@@ -178,6 +178,7 @@ export default function UsersManagement() {
   >(null);
   const [activeTab, setActiveTab] = useState<'job-seekers' | 'recruiters' | 'pending-recruiters'>('job-seekers');
 
+
   // ============ Queries & Mutations ============
   const jobSeekerQueryParams: GetUsersParams = {
     page: jobSeekerPage,
@@ -218,6 +219,7 @@ export default function UsersManagement() {
   const recruiterTotalPages = recruiterPagination?.totalPages || 1;
 
   const pendingRecruiterPagination = pendingRecruitersData?.pagination;
+
   // const pendingRecruiterTotalPages = pendingRecruiterPagination?.totalPages || 1; // Used in RecruiterTable
 
   // ============ Handlers ============

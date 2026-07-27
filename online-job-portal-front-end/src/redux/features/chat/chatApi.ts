@@ -70,6 +70,10 @@ export const chatApi = baseApi.injectEndpoints({
       invalidatesTags: ["Chat"],
       transformResponse: (response: ApiResponse<Conversation>) => response.data,
     }),
+    searchJobSeekers: builder.query<ChatUser[], string>({
+      query: (q) => `/user/search-jobseekers?q=${encodeURIComponent(q)}`,
+      transformResponse: (response: ApiResponse<ChatUser[]>) => response.data,
+    }),
   }),
 });
 
@@ -78,4 +82,6 @@ export const {
   useGetMessagesQuery,
   useSendMessageMutation,
   useCreateConversationMutation,
+  useSearchJobSeekersQuery,
 } = chatApi;
+

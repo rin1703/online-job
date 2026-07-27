@@ -236,9 +236,9 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              ...result.data.map(({ _id }) => ({ type: 'Users' as const, id: _id })),
-              { type: 'Users', id: 'LIST' },
-            ]
+            ...result.data.map(({ _id }) => ({ type: 'Users' as const, id: _id })),
+            { type: 'Users', id: 'LIST' },
+          ]
           : [{ type: 'Users', id: 'LIST' }],
     }),
 
@@ -340,9 +340,9 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              ...result.data.map(({ _id }) => ({ type: 'Recruiters' as const, id: _id })),
-              { type: 'Recruiters', id: 'LIST' },
-            ]
+            ...result.data.map(({ _id }) => ({ type: 'Recruiters' as const, id: _id })),
+            { type: 'Recruiters', id: 'LIST' },
+          ]
           : [{ type: 'Recruiters', id: 'LIST' }],
     }),
 
@@ -365,12 +365,12 @@ export const adminApi = baseApi.injectEndpoints({
       providesTags: (result) =>
         result?.data
           ? [
-              ...result.data.map(({ _id }) => ({
-                type: 'Recruiters' as const,
-                id: _id,
-              })),
-              { type: 'Recruiters', id: 'PENDING' },
-            ]
+            ...result.data.map(({ _id }) => ({
+              type: 'Recruiters' as const,
+              id: _id,
+            })),
+            { type: 'Recruiters', id: 'PENDING' },
+          ]
           : [{ type: 'Recruiters', id: 'PENDING' }],
     }),
 
