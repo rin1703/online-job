@@ -71,12 +71,13 @@ export const createPayment = async (
   const orderCode = generateOrderCode();
   const publicCode = generatePublicCode(orderCode);
 
+  const corsOrigin = process.env.CORS_ORIGINS || "http://localhost:3000";
   const payosResult = await payos.paymentRequests.create({
     orderCode,
     amount: amountToPay,
     description,
-    returnUrl: `${process.env.CORS_ORIGINS}/payment-success`,
-    cancelUrl: `${process.env.CORS_ORIGINS}/payment-failure`,
+    returnUrl: `${corsOrigin}/payment-success`,
+    cancelUrl: `${corsOrigin}/payment-failure`,
   });
 
   // 6. Lưu Payment vào DB
@@ -134,6 +135,21 @@ export const processWebhookService = async (payload: any) => {
       );
 
       console.log("💰 Wallet updated:", updatedWallet.balance);
+
+      // Tự động mua/kích hoạt subscription package nếu nạp tiền để mua gói
+      if (payment.jobPackageId) {
+        console.log("Automatically purchasing package for payment:", payment._id);
+        try {
+          const { buySubscriptionService } = await import("./subscription.service");
+          const buyResult = await buySubscriptionService(payment.recruiterId.toString(), {
+            packageId: payment.jobPackageId.toString(),
+          });
+          console.log("Auto package purchase result:", buyResult);
+        } catch (buyErr: any) {
+          console.error("Auto package purchase failed:", buyErr.message);
+        }
+      }
+
       return { payment, walletBalance: updatedWallet.balance };
     } catch (err: any) {
       console.error("Wallet update failed:", err.message);

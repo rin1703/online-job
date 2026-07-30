@@ -66,8 +66,10 @@ export default function RecruiterInterviewsPage() {
 
     const lowerSearch = searchTerm.toLowerCase();
     return allInterviews.filter((interview) => {
-      const fullName = `${interview.jobSeekerId.firstName} ${interview.jobSeekerId.lastName}`.toLowerCase();
-      const email = interview.jobSeekerId.email.toLowerCase();
+      const jobSeeker = interview.jobSeekerId;
+      if (!jobSeeker) return false;
+      const fullName = `${jobSeeker.firstName || ''} ${jobSeeker.lastName || ''}`.toLowerCase();
+      const email = (jobSeeker.email || '').toLowerCase();
       return fullName.includes(lowerSearch) || email.includes(lowerSearch);
     });
   }, [allInterviews, searchTerm]);
@@ -226,18 +228,18 @@ export default function RecruiterInterviewsPage() {
                     <div className="flex-1 space-y-3">
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
-                          {interview.jobId.title}
+                          {interview.jobId?.title || "Deleted Job"}
                         </h3>
                         <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
                           <div className="flex items-center gap-1">
                             <Icons.user className="w-4 h-4" />
                             <span>
-                              {interview.jobSeekerId.firstName} {interview.jobSeekerId.lastName}
+                              {interview.jobSeekerId ? `${interview.jobSeekerId.firstName || ''} ${interview.jobSeekerId.lastName || ''}`.trim() : "Unknown Candidate"}
                             </span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Icons.mail className="w-4 h-4" />
-                            <span>{interview.jobSeekerId.email}</span>
+                            <span>{interview.jobSeekerId?.email || "N/A"}</span>
                           </div>
                         </div>
                       </div>

@@ -104,12 +104,12 @@ export const EditScheduleModal: React.FC<EditScheduleModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl">Edit Interview Schedule</DialogTitle>
           <div className="text-sm text-gray-600 mt-2">
-            <p>
-              <span className="font-medium">Candidate:</span> {interview.jobSeekerId.firstName}{' '}
-              {interview.jobSeekerId.lastName}
+             <p>
+              <span className="font-medium">Candidate:</span> {interview.jobSeekerId?.firstName || "Unknown"}{' '}
+              {interview.jobSeekerId?.lastName || "Candidate"}
             </p>
             <p>
-              <span className="font-medium">Position:</span> {interview.jobId.title}
+              <span className="font-medium">Position:</span> {interview.jobId?.title || "Deleted Job"}
             </p>
           </div>
         </DialogHeader>
