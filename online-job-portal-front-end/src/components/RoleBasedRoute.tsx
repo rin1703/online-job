@@ -40,7 +40,7 @@ export const RoleBasedRoute = ({ allowedRoles }: RoleBasedRouteProps) => {
   if (!userRole || !allowedRoles.includes(userRole)) {
     // Redirect to appropriate page based on current role
     if (userRole === "recruiter") {
-      return <Navigate to="/recruiter/overview" replace />;
+      return <Navigate to="/recruiter/jobs" replace />;
     } else if (userRole === "admin") {
       return <Navigate to="/admin" replace />;
     } else {

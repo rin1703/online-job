@@ -1,0 +1,76 @@
+$kind: http-request
+name: create job
+url: http://localhost:8080/api/v1/jobs/new
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \  \"title\": \"Senior Frontend Developer\",\r
+
+    \  \"jobType\": \"Full-time\",\r
+
+    \  \"experienceLevel\": \"Senior\",\r
+
+    \  \"salaryMin\": 20000000,\r
+
+    \  \"salaryMax\": 30000000,\r
+
+    \  \"salaryCurrency\": \"VND\",\r
+
+    \  \"numberOfPositions\": 2,\r
+
+    \  \"applicationDeadline\": \"2026-12-31T23:59:59.000Z\",\r
+
+    \  \"overview\": [\r
+
+    \    \"Develop modern web applications\",\r
+
+    \    \"Work with React and TypeScript\"\r
+
+    \  ],\r
+
+    \  \"responsibilities\": [\r
+
+    \    \"Build responsive UI\",\r
+
+    \    \"Collaborate with backend team\"\r
+
+    \  ],\r
+
+    \  \"requirements\": [\r
+
+    \    \"3+ years of frontend experience\",\r
+
+    \    \"Strong React skills\"\r
+
+    \  ],\r
+
+    \  \"benefits\": [\r
+
+    \    \"Health insurance\",\r
+
+    \    \"Bonus\"\r
+
+    \  ],\r
+
+    \  \"niceToHave\": [\r
+
+    \    \"Experience with Vite\"\r
+
+    \  ],\r
+
+    \  \"workingSchedule\": [\r
+
+    \    \"Monday to Friday\"\r
+
+    \  ],\r
+
+    \  \"isRemote\": true\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_06ir}}"
+order: 6000

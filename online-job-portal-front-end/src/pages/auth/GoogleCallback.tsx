@@ -86,8 +86,8 @@ export default function GoogleCallback() {
         // Redirect based on role
         switch (user.role) {
           case "recruiter":
-            console.log("[GoogleCallback] Redirecting to recruiter overview");
-            navigate("/recruiter/overview");
+            console.log("[GoogleCallback] Redirecting to recruiter jobs");
+            navigate("/recruiter/jobs");
             break;
           case "admin":
             console.log("[GoogleCallback] Redirecting to admin dashboard");

@@ -54,3 +54,27 @@ export const getPaymentHistory = async (
     return res.status(400).json({ message: err.message });
   }
 };
+
+export const verifyPaymentController = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  try {
+    const recruiterId = req.user!.userId;
+    const { orderCode } = req.body;
+    if (!orderCode) {
+      return res.status(400).json({ ok: false, message: "Missing orderCode" });
+    }
+
+    const result = await paymentService.verifyPaymentService(orderCode.toString(), recruiterId);
+    return res.status(200).json({
+      ok: true,
+      success: result.success,
+      status: result.status,
+      payment: result.payment,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, message: err.message });
+  }
+};
+

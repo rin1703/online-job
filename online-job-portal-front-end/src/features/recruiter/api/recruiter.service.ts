@@ -30,6 +30,10 @@ export const recruiterApi = baseApi.injectEndpoints({
     createRefund: builder.mutation<CreateRefundResponse, CreateRefundRequest>({
       query: (body) => ({ url: 'refunds/create', method: 'POST', body }),
     }),
+    verifyPayment: builder.mutation<{ ok: boolean; success: boolean; status: string; payment?: any }, { orderCode: string }>({
+      query: (body) => ({ url: 'payment/verify', method: 'POST', body }),
+      invalidatesTags: ['Profile'],
+    }),
   }),
 });
 
@@ -39,4 +43,5 @@ export const {
   useCreatePaymentMutation,
   useBuySubscriptionWithWalletMutation,
   useCreateRefundMutation,
+  useVerifyPaymentMutation,
 } = recruiterApi;

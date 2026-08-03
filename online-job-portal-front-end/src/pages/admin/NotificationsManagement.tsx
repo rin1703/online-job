@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useSendBroadcastMutation } from "@/redux/features/notification/notificationApi";
 
 type UserRole = "JOBSEEKER" | "RECRUITER" | "ADMIN";
 type NotificationTargetType = "ALL" | "ROLE" | "USER";
@@ -16,6 +17,7 @@ interface NotificationItem {
 
 
 const NotificationsManagement: React.FC = () => {
+  const [sendBroadcastMutation] = useSendBroadcastMutation();
   // filter
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<UserRole | "ALL">("ALL");
@@ -74,7 +76,7 @@ const NotificationsManagement: React.FC = () => {
     });
   }, [notifications, search, roleFilter, fromDate, toDate]);
 
-  const handleCreateNotification = (e: React.FormEvent) => {
+  const handleCreateNotification = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
@@ -84,45 +86,59 @@ const NotificationsManagement: React.FC = () => {
       return;
     }
 
+    let targetAudience: "all" | "job_seekers" | "recruiters" | "specific" = "all";
+    let specificEmails: string[] | undefined = undefined;
+
+    if (targetType === "ROLE") {
+      targetAudience = targetRole === "JOBSEEKER" ? "job_seekers" : "recruiters";
+    } else if (targetType === "USER") {
+      targetAudience = "specific";
+      const emails = targetUsers
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (!emails.length) {
+        setError(
+          "Please enter at least one email when selecting specific users."
+        );
+        return;
+      }
+      specificEmails = emails;
+    }
+
     const newNotif: NotificationItem = {
       id: Date.now().toString(),
       title: title.trim(),
       content: content.trim(),
       createdAt: new Date().toISOString(),
       targetType,
+      targetRole: targetType === "ROLE" ? targetRole : undefined,
+      targetUserIds: specificEmails,
     };
 
-    if (targetType === "ROLE") {
-      newNotif.targetRole = targetRole;
-    }
-
-    if (targetType === "USER") {
-      const ids = targetUsers
-        .split(",")
-        .map((x) => x.trim())
-        .filter(Boolean);
-      if (!ids.length) {
-        setError(
-          "Please enter at least one userId / email when selecting specific users."
-        );
-        return;
-      }
-      newNotif.targetUserIds = ids;
-    }
-
     setCreating(true);
-    // giả lập delay gửi (FE only)
-    setTimeout(() => {
+    try {
+      await sendBroadcastMutation({
+        title: title.trim(),
+        content: content.trim(),
+        targetAudience,
+        specificEmails,
+      }).unwrap();
+
       setNotifications((prev) => [newNotif, ...prev]);
-      setCreating(false);
-      setSuccessMsg("Notification sent successfully.");
+      setSuccessMsg("Notification sent successfully to recipients.");
 
       // reset form
       setTitle("");
       setContent("");
       setTargetType("ALL");
       setTargetUsers("");
-    }, 400);
+    } catch (err: any) {
+      console.error("Failed to send broadcast notification:", err);
+      setError(err?.data?.message || "Failed to send notification. Please try again.");
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (

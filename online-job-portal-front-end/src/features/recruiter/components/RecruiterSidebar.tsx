@@ -31,11 +31,11 @@ interface NavItem {
 }
 
 const platformItems: NavItem[] = [
-  {
-    title: "Overview",
-    icon: LayoutGrid,
-    path: "/recruiter/overview",
-  },
+  // {
+  //   title: "Overview",
+  //   icon: LayoutGrid,
+  //   path: "/recruiter/overview",
+  // },
   {
     title: "Job Management",
     icon: FileText,

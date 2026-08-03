@@ -115,6 +115,11 @@ export const processWebhookService = async (payload: any) => {
   const payment = await PaymentModel.findOne({ orderCode: data.orderCode });
   if (!payment) throw new Error("Payment not found");
 
+  if (payment.status === "paid") {
+    console.log(`Payment with orderCode ${data.orderCode} already processed as paid.`);
+    return payment;
+  }
+
   payment.status =
     payload.success === true && payload.desc === "success" ? "paid" : "failed";
 
@@ -158,6 +163,73 @@ export const processWebhookService = async (payload: any) => {
 
   return payment;
 };
+
+export const verifyPaymentService = async (orderCode: string, recruiterId: string) => {
+  const orderCodeNum = Number(orderCode);
+  if (isNaN(orderCodeNum)) {
+    throw new Error("Invalid orderCode");
+  }
+
+  const payment = await PaymentModel.findOne({ orderCode, recruiterId });
+  if (!payment) {
+    throw new Error("Payment not found or unauthorized");
+  }
+
+  if (payment.status === "paid") {
+    return { success: true, payment, status: "paid" };
+  }
+
+  if (!payos) {
+    throw new Error("PayOS is not configured on this server");
+  }
+
+  try {
+    const payosInfo = await payos.paymentRequests.get(orderCodeNum);
+    console.log(`PayOS status for orderCode ${orderCode}:`, payosInfo.status);
+
+    if (payosInfo.status === "PAID") {
+      payment.status = "paid";
+      await payment.save();
+
+      if (payment.purpose === "wallet_topup") {
+        const { addCreditService } = await import("./wallet.service");
+        const updatedWallet = await addCreditService(
+          payment.recruiterId.toString(),
+          {
+            amount: payment.amount,
+            reference: payment.orderCode,
+            description: `Top-up via PayOS (Verify API)`,
+          }
+        );
+
+        console.log("💰 Wallet updated via verify API:", updatedWallet.balance);
+
+        if (payment.jobPackageId) {
+          try {
+            const { buySubscriptionService } = await import("./subscription.service");
+            const buyResult = await buySubscriptionService(payment.recruiterId.toString(), {
+              packageId: payment.jobPackageId.toString(),
+            });
+            console.log("Auto package purchase result via verify API:", buyResult);
+          } catch (buyErr: any) {
+            console.error("Auto package purchase failed via verify API:", buyErr.message);
+          }
+        }
+      }
+      return { success: true, payment, status: "paid" };
+    } else if (["CANCELLED", "EXPIRED", "FAILED"].includes(payosInfo.status)) {
+      payment.status = "failed";
+      await payment.save();
+      return { success: false, payment, status: "failed" };
+    }
+
+    return { success: false, payment, status: "pending" };
+  } catch (err: any) {
+    console.error("PayOS check payment failed:", err.message);
+    throw err;
+  }
+};
+
 
 export const getPaymentHistoryService = async (
   recruiterId: string

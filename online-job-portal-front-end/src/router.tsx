@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Route, Routes, Navigate } from "react-router";
 
 // Admin
 import AdminLayout from "@/components/layouts/admin/AdminLayout";
@@ -153,7 +153,8 @@ function Router() {
       {/* Recruiter only routes */}
       <Route element={<RoleBasedRoute allowedRoles={["recruiter"]} />}>
         <Route path="/recruiter" element={<RecruiterLayout />}>
-          <Route path="overview" index element={<OverviewPage />} />
+          <Route index element={<Navigate to="/recruiter/jobs" replace />} />
+          <Route path="overview" element={<Navigate to="/recruiter/jobs" replace />} />
           <Route path="jobs" element={<JobManagementPage />} />
           <Route path="packages" element={<PackageManagementPage />} />
           {/* ✅ New: Job Listing → Applications flow */}

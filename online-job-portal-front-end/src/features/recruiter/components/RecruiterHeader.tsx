@@ -39,7 +39,7 @@ export default function RecruiterHeader() {
           <SidebarTrigger className="hover:bg-accent rounded-md transition-colors" />
           <div className="hidden sm:block">
             <h2 className="font-semibold text-xl text-foreground tracking-tight">
-              Recruiter Dashboard
+              Recruiter Portal
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">Manage your recruitment process</p>
           </div>
@@ -83,7 +83,7 @@ export default function RecruiterHeader() {
 
               <nav className="p-2">
                 <Link
-                  to="/recruiter/settings/profile"
+                  to="/recruiter/companies"
                   className="flex items-center gap-3 px-4 py-3 text-sm rounded-lg hover:bg-accent transition-colors group"
                 >
                   <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">

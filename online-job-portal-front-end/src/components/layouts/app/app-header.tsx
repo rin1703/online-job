@@ -38,8 +38,7 @@ const getMenuItemsByRole = (role: string) => {
   switch (role) {
     case "recruiter":
       return [
-        { icon: LayoutGrid, label: "Dashboard", path: "/recruiter/overview" },
-        { icon: FileText, label: "Job Posts", path: "/recruiter/posts" },
+        { icon: FileText, label: "Job Posts", path: "/recruiter/jobs" },
         { icon: Users, label: "Applications", path: "/recruiter/applications" },
         { icon: Package, label: "Packages", path: "/recruiter/packages" },
         { icon: Settings, label: "Settings", path: "/recruiter/setting" },
@@ -246,7 +245,7 @@ export default function AppHeader() {
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium cursor-pointer"
               >
                 <MoveLeft className="w-4 h-4"/>
-                Back to Dashboard
+                Back to Jobs
               </button>
             )}
             {!isAuthenticated && (

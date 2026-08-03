@@ -9,6 +9,15 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { normalizeNotificationUrl } from '../notification.routes';
 import { toast } from 'sonner';
+import { useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -22,6 +31,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   onDelete,
 }) => {
   const navigate = useNavigate(); 
+  const [isModalOpen, setIsModalOpen] = useState(false); 
   const typeConfig = NOTIFICATION_TYPE_CONFIG[notification.type] || {
     label: 'Others',
     color: 'bg-gray-100 text-gray-800',
@@ -38,6 +48,17 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       notification.type,
       notification.metadata
     );
+
+    const isBroadcastOrSystem = 
+      notification.type === 'admin_broadcast' || 
+      notification.type === 'system' ||
+      !notification.metadata?.actionUrl ||
+      targetUrl.endsWith('/notifications');
+
+    if (isBroadcastOrSystem) {
+      setIsModalOpen(true);
+      return;
+    }
     
     console.log('🔗 Notification click:', {
       type: notification.type,
@@ -74,9 +95,10 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   const IconComponent = typeConfig.icon;
 
   return (
-    <Card 
-      className={`overflow-hidden transition-all duration-200 hover:shadow-lg cursor-pointer border-l-4 ${
-        !notification.isRead 
+    <>
+      <Card 
+        className={`overflow-hidden transition-all duration-200 hover:shadow-lg cursor-pointer border-l-4 ${
+          !notification.isRead 
           ? 'border-l-orange-500 bg-gradient-to-r from-orange-50/40 to-white shadow-md' 
           : 'border-l-gray-300 bg-white hover:border-l-orange-400'
       }`}
@@ -183,5 +205,65 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         </div>
       </div>
     </Card>
-  );
+
+    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant="secondary" 
+              className={`text-xs font-semibold px-2 py-0.5 flex items-center gap-1 ${typeConfig.color}`}
+            >
+              <IconComponent className="w-3 h-3" />
+              {typeConfig.label}
+            </Badge>
+            <span className="text-xs text-gray-500">
+              {format(new Date(notification.createdAt), 'dd/MM/yyyy HH:mm')}
+            </span>
+          </div>
+          <DialogTitle className="text-base font-bold text-gray-900 leading-snug">
+            {notification.title}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Notification content dialog
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4 border-t border-b border-gray-100 my-2">
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+            {notification.content}
+          </p>
+        </div>
+
+        <DialogFooter className="flex sm:justify-between items-center gap-2">
+          <div className="text-xs text-gray-400">
+            Sender: {notification.sender?.name || 'System'} ({notification.sender?.role || 'Admin'})
+          </div>
+          <div className="flex items-center gap-2">
+            <ButtonLowercase
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsModalOpen(false);
+                onDelete(notification._id);
+              }}
+              className="text-xs h-9 px-3 text-red-600 hover:text-red-700 hover:bg-red-50 font-medium"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" />
+              Delete
+            </ButtonLowercase>
+            <ButtonLowercase
+              variant="default"
+              size="sm"
+              onClick={() => setIsModalOpen(false)}
+              className="bg-orange-500 hover:bg-orange-600 text-white text-xs h-9 px-4 font-semibold rounded-lg"
+            >
+              Close
+            </ButtonLowercase>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  </>
+);
 };

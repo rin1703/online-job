@@ -102,8 +102,8 @@ export default function SignInForm() {
       // Redirect based on user role
       switch (user.role) {
         case "recruiter":
-          console.log("[SignInForm] Redirecting to recruiter overview");
-          navigate("/recruiter/overview");
+          console.log("[SignInForm] Redirecting to recruiter jobs");
+          navigate("/recruiter/jobs");
           break;
         case "admin":
           console.log("[SignInForm] Redirecting to admin dashboard");

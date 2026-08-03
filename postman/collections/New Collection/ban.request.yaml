@@ -1,0 +1,18 @@
+$kind: http-request
+name: ban
+url: http://localhost:8080/api/v1/admin/users/6a55933e52d0d483097555eb/unban
+method: PUT
+body:
+  type: json
+  content: "{\r
+
+    \  \"duration\": \"7_days\",\r
+
+    \  \"reason\": \"Vi phạm điều khoản cộng đồng\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{supabase_service_role_api_key_061f}}"
+order: 4000

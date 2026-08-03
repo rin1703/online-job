@@ -1,0 +1,13 @@
+$kind: http-request
+name: hidden job
+description: ""
+url: http://localhost:8080/api/v1/jobs/6a6bffc982bcf5ee07677b31/status
+method: PATCH
+body:
+  type: json
+  content: "{\r\n  \"status\": \"active\"\r\n}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{supabase_service_role_api_key_06ir}}"
+order: 4277879500110147

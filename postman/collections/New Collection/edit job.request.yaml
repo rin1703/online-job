@@ -1,0 +1,28 @@
+$kind: http-request
+name: edit job
+url: http://localhost:8080/api/v1/jobs/6a6bf9ac82bcf5ee076778bb
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \  \"title\": \"Senior Frontend Developer Updated\",\r
+
+    \  \"salaryMin\": 22000000,\r
+
+    \  \"salaryMax\": 32000000,\r
+
+    \  \"experienceLevel\": \"Senior\",\r
+
+    \  \"overview\": [\"Updated overview\"],\r
+
+    \  \"responsibilities\": [\"Updated responsibility\"],\r
+
+    \  \"requirements\": [\"Updated requirement\"]\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_06ir}}"
+order: 673969546990574

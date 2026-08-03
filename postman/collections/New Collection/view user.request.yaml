@@ -1,0 +1,12 @@
+$kind: http-request
+name: view user
+url: http://localhost:8080/api/v1/admin/users
+method: GET
+body:
+  type: json
+  content: ""
+auth:
+  type: bearer
+  credentials:
+    token: ' "{{supabase_service_role_api_key_14ac}}"'
+order: 3000

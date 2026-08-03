@@ -1,0 +1,5 @@
+$kind: http-request
+name: view job
+url: http://localhost:8080/api/v1/jobs
+method: GET
+order: 5000

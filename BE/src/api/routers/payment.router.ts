@@ -3,6 +3,7 @@ import {
   createPaymentController,
   webhookController,
   getPaymentHistory,
+  verifyPaymentController,
 } from "../controller/payment.controller";
 import {
   verifyToken,
@@ -20,6 +21,14 @@ router.post(
   requireRole(UserRole.RECRUITER),
   createPaymentController
 );
+
+router.post(
+  "/verify",
+  verifyToken,
+  requireRole(UserRole.RECRUITER),
+  verifyPaymentController
+);
+
 // router.post("/webhook", express.raw({ type: "*/*" }), webhookController);
 
 router.get(
