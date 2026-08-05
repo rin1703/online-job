@@ -33,6 +33,7 @@ import SubscriptionModel from "../models/subscription.model";
 import mongoose from "mongoose";
 import { RecruiterFilterDTO } from "../dto/job/recruiterFilter.dto";
 import User from "../models/user.model";
+import { sendJobModerationNotification } from "./notification.service";
 import Company from "../models/company.model";
 import ApplicationModel from "../models/application.model";
 
@@ -426,6 +427,7 @@ export const getJobListingDetailService = async (
     title: job.title,
     salaryMin: job.salaryMin,
     salaryMax: job.salaryMax,
+    salaryCurrency: job.salaryCurrency || "USD",
     experienceLevel: job.experienceLevel,
     applicationDeadline: job.applicationDeadline || null,
     numberOfPositions: job.numberOfPositions,
@@ -449,6 +451,13 @@ export const getJobListingDetailService = async (
     isRemote: job.isRemote || false,
     recruiterId: (job.recruiterId as any)?._id?.toString() || (job.recruiterId ? job.recruiterId.toString() : ""),
     recruiterName: `${(job.recruiterId as any)?.firstName || ""} ${(job.recruiterId as any)?.lastName || ""}`.trim() || "Unknown Recruiter",
+    status: job.status,
+    approvalStatus: job.approvalStatus,
+    rejectionReason: job.rejectionReason || null,
+    views: job.views || 0,
+    isDeleted: job.isDeleted || false,
+    createdAt: job.createdAt,
+    updatedAt: job.updatedAt,
   };
 
   return dto;
@@ -727,7 +736,8 @@ export const updateJobStatusByRecruiter = async (
 // Test hàm này
 export const updateJobApprovalByAdmin = async (
   jobListingId: string,
-  dto: AdminApprovalDTO
+  dto: AdminApprovalDTO,
+  adminId: string
 ) => {
   const allowedStatuses = ["approved", "rejected"];
   if (!allowedStatuses.includes(dto.approvalStatus)) {
@@ -804,6 +814,19 @@ export const updateJobApprovalByAdmin = async (
       subscription.features.jobPostings.limit += 1;
       await subscription.save();
     }
+  }
+
+  try {
+    await sendJobModerationNotification(
+      adminId,
+      existingJob.recruiterId.toString(),
+      existingJob._id.toString(),
+      existingJob.title,
+      dto.approvalStatus as "approved" | "rejected",
+      dto.rejectionReason
+    );
+  } catch (notificationError) {
+    console.warn("Unable to notify recruiter about job moderation:", notificationError);
   }
 
   return updated;

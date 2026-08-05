@@ -3,6 +3,7 @@ export class JobDetailDTO {
   title: string;
   salaryMin: number;
   salaryMax: number;
+  salaryCurrency: string;
   location: {
     address: string;
     district: string;
@@ -26,4 +27,11 @@ export class JobDetailDTO {
   isRemote?: boolean; // Thêm trường này
   recruiterId: string;
   recruiterName: string;
+  status: string;
+  approvalStatus: string;
+  rejectionReason?: string | null;
+  views: number;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

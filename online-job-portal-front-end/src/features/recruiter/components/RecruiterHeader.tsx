@@ -7,6 +7,7 @@ import { logout as logoutAction } from "@/features/auth/api/auth.slice";
 import { useAppDispatch, useAppSelector } from "@/hooks/redux";
 import { toast } from "sonner";
 import { useGetWalletBalanceQuery } from "@/features/recruiter/api/recruiter.service";
+import { NotificationDropdown } from "@/components/shared/NotificationDropdown";
 
 export default function RecruiterHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,24 +46,27 @@ export default function RecruiterHeader() {
           </div>
         </div>
 
-        <div className="relative">
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            onBlur={() => setTimeout(() => setIsMenuOpen(false), 200)}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-all duration-200 shadow-sm hover:shadow-md group cursor-pointer"
-          >
-            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
-              <CircleUser className="w-5 h-5" />
-            </div>
-            <div className="hidden md:flex flex-col items-start">
-              <span className="font-medium text-sm text-foreground">{userName}</span>
-              <span className="text-xs text-muted-foreground">{userEmail}</span>
-            </div>
-            <ChevronDown
-              className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""
-                }`}
-            />
-          </button>
+        <div className="flex items-center gap-3">
+          <NotificationDropdown />
+
+          <div className="relative">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              onBlur={() => setTimeout(() => setIsMenuOpen(false), 200)}
+              className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border/40 bg-card hover:bg-accent/50 transition-all duration-200 shadow-sm hover:shadow-md group cursor-pointer"
+            >
+              <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                <CircleUser className="w-5 h-5" />
+              </div>
+              <div className="hidden md:flex flex-col items-start">
+                <span className="font-medium text-sm text-foreground">{userName}</span>
+                <span className="text-xs text-muted-foreground">{userEmail}</span>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isMenuOpen ? "rotate-180" : ""
+                  }`}
+              />
+            </button>
 
           {isMenuOpen && (
             <div
@@ -154,6 +158,7 @@ export default function RecruiterHeader() {
               </nav>
             </div>
           )}
+          </div>
         </div>
       </div>
     </header>

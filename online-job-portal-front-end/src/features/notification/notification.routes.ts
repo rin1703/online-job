@@ -3,14 +3,26 @@ import { NotificationType } from '@/features/notification/notification.type';
 const getCurrentUserRole = (): 'recruiter' | 'job-seeker' | 'admin' => {
   const user = localStorage.getItem('user');
   if (user) {
-    const parsed = JSON.parse(user);
-    return parsed.role || 'job-seeker';
+    try {
+      const parsed = JSON.parse(user);
+      if (parsed.role === 'recruiter' || parsed.role === 'admin') return parsed.role;
+      return 'job-seeker';
+    } catch {
+      // Fall back to the current URL when stored session data is malformed.
+    }
   }
   
   const currentPath = window.location.pathname;
   if (currentPath.startsWith('/recruiter')) return 'recruiter';
   if (currentPath.startsWith('/admin')) return 'admin';
   return 'job-seeker';
+};
+
+export const getNotificationListRoute = (): string => {
+  const currentRole = getCurrentUserRole();
+  if (currentRole === 'recruiter') return '/recruiter/notifications';
+  if (currentRole === 'admin') return '/admin/notifications';
+  return '/notifications';
 };
 
 export const getDefaultNotificationRoute = (
@@ -22,15 +34,13 @@ export const getDefaultNotificationRoute = (
     reportId?: string;
   }
 ): string => {
-  const currentRole = getCurrentUserRole();
-
   switch (type) {
     case NotificationType.APPLICATION_RECEIVED:
       return metadata?.applicationId 
         ? `/recruiter/applications/${metadata.applicationId}`
         : '/recruiter/applications';
 
-    case NotificationType.APPLICATION_STATUS:
+    case NotificationType.APPLICATION_STATUS: {
       // ✅ FIX: Job Seeker - Nếu không có applicationId, chỉ về list
       // Vì backend có thể gửi sai ID (userId thay vì applicationId)
       if (!metadata?.applicationId) {
@@ -46,6 +56,7 @@ export const getDefaultNotificationRoute = (
       }
       
       return `/job-seeker/applications/${metadata.applicationId}`;
+    }
 
     case NotificationType.INTERVIEW_INVITATION:
       return metadata?.interviewId
@@ -57,6 +68,9 @@ export const getDefaultNotificationRoute = (
         ? `/recruiter/interviews/${metadata.interviewId}`
         : '/recruiter/interviews';
 
+    case NotificationType.JOB_STATUS:
+      return '/recruiter/jobs';
+
     case NotificationType.REPORT_JOB:
     case NotificationType.REPORT_USER:
       return metadata?.reportId
@@ -65,10 +79,10 @@ export const getDefaultNotificationRoute = (
 
     case NotificationType.ADMIN_BROADCAST:
     case NotificationType.SYSTEM:
-      return `/${currentRole}/notifications`;
+      return getNotificationListRoute();
 
     default:
-      return `/${currentRole}/notifications`;
+      return getNotificationListRoute();
   }
 };
 
@@ -89,6 +103,10 @@ export const normalizeNotificationUrl = (
 
   if (type === NotificationType.INTERVIEW_RESPONSE && metadata?.interviewId) {
     return `/recruiter/interviews/${metadata.interviewId}`;
+  }
+
+  if (type === NotificationType.JOB_STATUS) {
+    return '/recruiter/jobs';
   }
 
   // ✅ Priority 2: Use default route if no actionUrl
@@ -134,6 +152,7 @@ const getRolePrefixByNotificationType = (type: NotificationType): string => {
   switch (type) {
     case NotificationType.APPLICATION_RECEIVED:
     case NotificationType.INTERVIEW_RESPONSE:
+    case NotificationType.JOB_STATUS:
       return '/recruiter';
 
     case NotificationType.APPLICATION_STATUS:

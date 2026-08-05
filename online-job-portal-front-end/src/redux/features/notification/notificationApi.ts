@@ -20,6 +20,7 @@ export interface Notification {
     applicationId?: string;
     interviewId?: string;
     reportId?: string;
+    status?: string;
     actionUrl?: string;
   };
   isRead: boolean;

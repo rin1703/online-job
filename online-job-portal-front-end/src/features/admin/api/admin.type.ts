@@ -40,6 +40,11 @@ export interface GetSubscriptionPackagesResponse {
   data: SubscriptionPackage[];
 }
 
+export interface GetSubscriptionPackageDetailResponse {
+  success: boolean;
+  data: SubscriptionPackage;
+}
+
 export interface Pagination {
   currentPage: number;
   pageSize: number;
@@ -95,6 +100,7 @@ export interface DeletePackageResponse {
 export interface UpdatePackageRequest {
   packageId: string;
   name?: string;
+  type?: string;
   price?: number;
   duration?: {
     value: number;
@@ -146,6 +152,11 @@ export interface CreatePackageRequest {
       emailCampaign: number;
       socialMediaPromotion: boolean;
     };
+    extras?: Array<{
+      name: string;
+      description: string;
+      enabled: boolean;
+    }>;
   };
   description?: string;
   shortDescription?: string;

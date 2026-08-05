@@ -32,8 +32,16 @@ export function NotificationPageContent({ maxWidth = 'max-w-5xl' }: Notification
     id: null,
   });
 
-  const { data: notifications = [], isLoading } = useGetNotificationsQuery({});
-  const { data: unreadCount = 0 } = useGetUnreadCountQuery();
+  const { data: notifications = [], isLoading } = useGetNotificationsQuery({}, {
+    pollingInterval: NOTIFICATION_CONSTANTS.POLLING_INTERVAL,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+  const { data: unreadCount = 0 } = useGetUnreadCountQuery(undefined, {
+    pollingInterval: NOTIFICATION_CONSTANTS.POLLING_INTERVAL,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const [markAsRead] = useMarkAsReadMutation();
   const [markAllAsRead] = useMarkAllAsReadMutation();
   const [deleteNotification] = useDeleteNotificationMutation();
