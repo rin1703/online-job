@@ -71,7 +71,7 @@ export default function PackageManagementPage() {
 
     // Handle both response structures - direct array or nested in data.data or data
     let apiPackages = [];
-    
+
     // Try different response structures
     if (Array.isArray(data)) {
       apiPackages = data;
@@ -83,7 +83,7 @@ export default function PackageManagementPage() {
         apiPackages = innerData;
       }
     }
-    
+
     console.log("API packages:", apiPackages);
 
     if (apiPackages && Array.isArray(apiPackages) && apiPackages.length > 0) {
@@ -94,10 +94,10 @@ export default function PackageManagementPage() {
         const messaging = p.features?.messaging || {};
         const support = p.features?.support || {};
         const advertising = p.features?.advertising || {};
-        
+
         // Build comprehensive features list
         const featuresList = [];
-        
+
         // Job postings feature
         if (jobPostings.limit !== undefined) {
           if (jobPostings.limit === -1) {
@@ -106,7 +106,7 @@ export default function PackageManagementPage() {
             featuresList.push(`Up to ${jobPostings.limit} Job Postings`);
           }
         }
-        
+
         // Featured postings (handle -1 as unlimited)
         if (jobPostings.featured !== undefined) {
           if (jobPostings.featured === -1) {
@@ -115,32 +115,32 @@ export default function PackageManagementPage() {
             featuresList.push(`${jobPostings.featured} Featured Postings`);
           }
         }
-        
+
         // Visibility duration
         if (jobPostings.visibleDuration) {
           featuresList.push(`Visible for ${jobPostings.visibleDuration} days`);
         }
-        
+
         // Candidate search
         if (candidateSearch.enabled) {
-          const viewsText = candidateSearch.viewsPerMonth > 0 
+          const viewsText = candidateSearch.viewsPerMonth > 0
             ? `${candidateSearch.viewsPerMonth} views/month`
             : 'Unlimited views';
           featuresList.push(`Candidate Search (${viewsText})`);
-          
+
           if (candidateSearch.downloadCV) {
             featuresList.push('Download Candidate CVs');
           }
         }
-        
+
         // Messaging
         if (messaging.enabled) {
-          const messagesText = messaging.messagesPerMonth > 0 
+          const messagesText = messaging.messagesPerMonth > 0
             ? `${messaging.messagesPerMonth} messages/month`
             : 'Unlimited messages';
           featuresList.push(`Direct Messaging (${messagesText})`);
         }
-        
+
         // Support features
         if (support.priority && support.priority !== 'none') {
           featuresList.push(`${support.priority.charAt(0).toUpperCase() + support.priority.slice(1)} Priority Support`);
@@ -151,7 +151,7 @@ export default function PackageManagementPage() {
         if (support.advancedReports) {
           featuresList.push('Advanced Reports');
         }
-        
+
         // Advertising features
         if (advertising.homepageBanner) {
           featuresList.push('Homepage Banner');
@@ -162,15 +162,15 @@ export default function PackageManagementPage() {
         if (advertising.socialMediaPromotion) {
           featuresList.push('Social Media Promotion');
         }
-        
+
         // Format duration display
         const durationValue = p.duration?.value || 30;
         const durationUnit = p.duration?.unit || 'month';
         const durationDisplay = `${durationValue} ${durationUnit}${durationValue > 1 ? 's' : ''}`;
-        
+
         // Use buyed field directly from response
         const isBuyed = p.buyed === true;
-        
+
         return {
           packageId: p._id || p.id,
           packageName: p.name || p.title || 'Package',
@@ -268,12 +268,12 @@ export default function PackageManagementPage() {
   const handleOpenRefund = (pkg: any) => {
     // Since buyed status comes directly from API, we can proceed with refund
     console.log("Selected package for refund:", pkg);
-    
+
     if (!pkg.buyed) {
       toast.error('You cannot refund a package you do not have active subscription for.');
       return;
     }
-    
+
     // Use packageId directly as subscriptionId - it's the package being refunded
     setSelectedPackageForRefund({ ...pkg, subscriptionId: pkg.packageId });
     setRefundData({ reason: "", refundType: "" });
@@ -288,7 +288,7 @@ export default function PackageManagementPage() {
 
     try {
       setIsRefunding(true);
-      
+
       const payload = {
         subscriptionId: selectedPackageForRefund.subscriptionId,
         reason: refundData.reason,
@@ -298,10 +298,10 @@ export default function PackageManagementPage() {
       console.log('Submitting refund request:', payload);
       const result = await createRefund(payload).unwrap();
       console.log('Refund request created:', result);
-      
+
       toast.success(`Refund request created successfully!`);
       setIsRefundOpen(false);
-      
+
       // Optional: refetch subscription data
       // navigate(0);
     } catch (err: any) {
@@ -324,12 +324,12 @@ export default function PackageManagementPage() {
           // Determine card styling based on package type
           const isStandard = pkg.packageType === 'standard';
           const isPremium = pkg.packageType === 'premium';
-          const cardBorderClass = isStandard 
+          const cardBorderClass = isStandard
             ? 'border-amber-400 border-2'
             : isPremium
               ? 'border-purple-500 border-2'
               : 'border-stroke';
-          
+
           return (
             <Card
               key={pkg.packageId}
@@ -341,14 +341,14 @@ export default function PackageManagementPage() {
                   {pkg.packageType.charAt(0).toUpperCase() + pkg.packageType.slice(1)}
                 </div>
               )}
-              
+
               {/* Current Subscription Indicator */}
               {pkg.buyed && (
                 <div className="bg-green-50 text-green-700 text-xs font-semibold text-center py-2 rounded-t-lg border-b border-green-200">
                   ✓ Current Package
                 </div>
               )}
-              
+
               <CardHeader className={pkg.buyed ? 'pb-2 pt-2' : 'pb-4'}>
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-2xl font-bold text-primary flex-1">{pkg.packageName}</CardTitle>
@@ -358,7 +358,7 @@ export default function PackageManagementPage() {
                 </div>
                 <CardDescription className="pt-2">{pkg.description}</CardDescription>
               </CardHeader>
-              
+
               <CardContent className="flex-1">
                 {/* Price Section */}
                 <p className="text-4xl font-extrabold mb-4">
@@ -367,7 +367,7 @@ export default function PackageManagementPage() {
                     / {pkg.durationDisplay || `${pkg.validityDays} days`}
                   </span>
                 </p>
-                
+
                 {/* Features List */}
                 <ul className="space-y-3">
                   {pkg.features.map((feature: string, idx: number) => (
@@ -378,7 +378,7 @@ export default function PackageManagementPage() {
                   ))}
                 </ul>
               </CardContent>
-              
+
               <CardFooter className="flex flex-col sm:flex-row gap-2 pt-6">
                 {!pkg.buyed && (
                   <Button

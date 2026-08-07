@@ -153,9 +153,7 @@ export default function JobListingForApplications() {
               </SelectTrigger>
               <SelectContent>
                 {filterOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -167,9 +165,7 @@ export default function JobListingForApplications() {
                 </SelectTrigger>
                 <SelectContent>
                   {limitOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -125,10 +125,9 @@ export default function RecruiterSidebar() {
                                 ${isCollapsed ? "w-12 h-12 !p-0" : "w-full h-11 px-3"}
                                 flex items-center justify-center
                                 transition-all duration-200 rounded-lg group
-                                ${
-                                  isActive
-                                    ? "bg-primary text-primary-foreground shadow-md font-semibold"
-                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                                ${isActive
+                                  ? "bg-primary text-primary-foreground shadow-md font-semibold"
+                                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                 }
                               `}
                             >
@@ -136,9 +135,8 @@ export default function RecruiterSidebar() {
                                 className={`flex items-center ${isCollapsed ? "justify-center w-full" : "gap-3 justify-start w-full"}`}
                               >
                                 <item.icon
-                                  className={`h-5 w-5 ${isCollapsed ? "" : "min-w-[20px]"} transition-transform duration-200 ${
-                                    isActive ? "" : "opacity-70 group-hover:opacity-100"
-                                  }`}
+                                  className={`h-5 w-5 ${isCollapsed ? "" : "min-w-[20px]"} transition-transform duration-200 ${isActive ? "" : "opacity-70 group-hover:opacity-100"
+                                    }`}
                                 />
                                 {!isCollapsed && (
                                   <span className="text-sm truncate">{item.title}</span>
