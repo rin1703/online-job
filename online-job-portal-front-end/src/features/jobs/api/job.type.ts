@@ -42,6 +42,7 @@ export interface JobDetail extends RecruiterJobPosting {
   overview: string[];
   responsibilities: string[];
   requirementSkill: string[];
+  salaryCurrency?: string;
   benefits?: string[];
   niceToHave?: string[];
   workingSchedule?: string[];
@@ -59,6 +60,7 @@ export interface JobDetail extends RecruiterJobPosting {
     name: string;
     logo: string | null;
   };
+  rejectionReason?: string | null;
 }
 
 // ============================================

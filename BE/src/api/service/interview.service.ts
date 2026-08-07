@@ -208,6 +208,7 @@ export const getInterviewById = async (
  */
 export const respondToInterview = async (
   interviewId: string,
+  jobSeekerId: string,
   accepted: boolean,
   rejectionReason?: string
 ): Promise<any | null> => {
@@ -216,6 +217,10 @@ export const respondToInterview = async (
     const interview = await Interview.findById(interviewId);
     if (!interview) {
       throw new Error("Không tìm thấy lịch phỏng vấn");
+    }
+
+    if (interview.jobSeekerId.toString() !== jobSeekerId) {
+      throw new Error("Bạn không có quyền phản hồi lịch phỏng vấn này");
     }
 
     // Step 2: Update interview status and response
@@ -240,14 +245,18 @@ export const respondToInterview = async (
 
     // Step 5: Send notification
     const jobSeekerFullName = getUserFullName(jobSeeker);
-    await sendInterviewResponseNotification(
-      interview.recruiterId.toString(),
-      interviewId,
-      jobSeekerFullName,
-      jobTitle,
-      accepted,
-      rejectionReason
-    );
+    try {
+      await sendInterviewResponseNotification(
+        interview.recruiterId.toString(),
+        interviewId,
+        jobSeekerFullName,
+        jobTitle,
+        accepted,
+        rejectionReason
+      );
+    } catch (notificationError) {
+      console.warn("Unable to notify recruiter about interview response:", notificationError);
+    }
 
     return savedInterview;
   } catch (error) {

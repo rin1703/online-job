@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons/icons';
@@ -16,10 +16,12 @@ import {
   useMarkAsReadMutation 
 } from '@/redux/features/notification/notificationsApi';
 import { NOTIFICATION_CONSTANTS, NOTIFICATION_TYPE_CONFIG } from '@/features/notification/notification.constants';
-import { normalizeNotificationUrl } from '@/features/notification/notification.routes'; // ✅ UPDATED
+import {
+  getNotificationListRoute,
+  normalizeNotificationUrl,
+} from '@/features/notification/notification.routes';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import React from 'react';
 
 export const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,9 +29,17 @@ export const NotificationDropdown = () => {
 
   const { data: notifications = [], isLoading } = useGetNotificationsQuery({
     limit: NOTIFICATION_CONSTANTS.DROPDOWN_MAX_ITEMS,
+  }, {
+    pollingInterval: NOTIFICATION_CONSTANTS.POLLING_INTERVAL,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
 
-  const { data: unreadCount = 0 } = useGetUnreadCountQuery();
+  const { data: unreadCount = 0 } = useGetUnreadCountQuery(undefined, {
+    pollingInterval: NOTIFICATION_CONSTANTS.POLLING_INTERVAL,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const [markAsRead] = useMarkAsReadMutation();
 
   const handleNotificationClick = async (
@@ -131,15 +141,15 @@ export const NotificationDropdown = () => {
                     )}
                   >
                     <div className={`w-full px-4 py-3 ${
-                      !notification.isRead ? 'bg-blue-50/50' : ''
+                      notification.isRead ? '' : 'bg-blue-50/50'
                     }`}>
                       <div className="flex items-start gap-3">
                         {/* Icon */}
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          !notification.isRead ? 'bg-orange-500' : 'bg-gray-200'
+                          notification.isRead ? 'bg-gray-200' : 'bg-orange-500'
                         }`}>
                           {typeConfig.icon && React.createElement(typeConfig.icon, {
-                            className: `w-4 h-4 ${!notification.isRead ? 'text-white' : 'text-gray-600'}`
+                            className: `w-4 h-4 ${notification.isRead ? 'text-gray-600' : 'text-white'}`
                           })}
                         </div>
 
@@ -178,7 +188,7 @@ export const NotificationDropdown = () => {
             <DropdownMenuSeparator />
             <div className="p-2">
               <Link
-                to="/notifications"
+                to={getNotificationListRoute()}
                 className="block w-full text-center py-2 text-sm text-orange-600 hover:text-orange-700 font-medium hover:bg-orange-50 rounded-md transition-colors"
                 onClick={() => setIsOpen(false)}
               >

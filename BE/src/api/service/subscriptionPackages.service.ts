@@ -1,5 +1,6 @@
 import SubscriptionPackage from '../models/subscriptionPackage.model';
 import slugify from 'slugify';
+import { Types } from 'mongoose';
 import {
     CreateSubscriptionPackageDTO,
     UpdateSubscriptionPackageDTO
@@ -39,11 +40,17 @@ class SubscriptionPackageService {
      * Lấy chi tiết package theo ID hoặc slug
      */
     async getPackageByIdOrSlug(identifier: string) {
+        const cleanIdentifier = identifier.trim();
+        const lookupConditions: Record<string, string>[] = [
+            { slug: cleanIdentifier.toLowerCase() }
+        ];
+
+        if (Types.ObjectId.isValid(cleanIdentifier)) {
+            lookupConditions.unshift({ _id: cleanIdentifier });
+        }
+
         const package_ = await SubscriptionPackage.findOne({
-            $or: [
-                { _id: identifier },
-                { slug: identifier }
-            ]
+            $or: lookupConditions
         });
 
         if (!package_) {

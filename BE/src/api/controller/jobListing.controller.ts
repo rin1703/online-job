@@ -197,8 +197,18 @@ export const updateRecruiterJobStatus = async (req: Request, res: Response) => {
   }
 };
 
-export const updateAdminJobApproval = async (req: Request, res: Response) => {
+export const updateAdminJobApproval = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
   try {
+    if (!req.user) {
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
     const jobListingId = getParamAsString(req.params.id, "id");
     const { approvalStatus, rejectionReason } = req.body;
 
@@ -207,7 +217,11 @@ export const updateAdminJobApproval = async (req: Request, res: Response) => {
       rejectionReason,
     });
 
-    const updatedJob = await updateJobApprovalByAdmin(jobListingId, dto);
+    const updatedJob = await updateJobApprovalByAdmin(
+      jobListingId,
+      dto,
+      req.user.userId
+    );
     if (!updatedJob) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,

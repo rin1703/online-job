@@ -1,12 +1,17 @@
 import { SubscriptionPackageDTO } from './subscription-package.dto';
 
-// DTO for detailed package response (includes all features except candidateSearch)
+// DTO for detailed package response (includes all package features)
 export class SubscriptionPackageDetailDTO extends SubscriptionPackageDTO {
     features: {
         jobPostings: {
             limit: number;
             featured: number;
             visibleDuration: number;
+        };
+        candidateSearch: {
+            enabled: boolean;
+            viewsPerMonth: number;
+            downloadCV: boolean;
         };
         messaging: {
             enabled: boolean;
@@ -31,9 +36,9 @@ export class SubscriptionPackageDetailDTO extends SubscriptionPackageDTO {
 
     constructor(data: any) {
         super(data);
-        // Only include features without candidateSearch
         this.features = {
             jobPostings: data.features?.jobPostings,
+            candidateSearch: data.features?.candidateSearch,
             messaging: data.features?.messaging,
             support: data.features?.support,
             advertising: data.features?.advertising,

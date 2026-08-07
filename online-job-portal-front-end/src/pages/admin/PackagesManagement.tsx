@@ -31,14 +31,69 @@ import {
   SelectValue,
 } from '@/components/ui/admin/select-custom';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Edit, Trash2, Package, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, Loader2, AlertCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Btn';
 import type { Package as PackageType } from '@/data/mockAdminData';
-import { useGetSubscriptionPackagesQuery, useDeleteSubscriptionPackageMutation, useUpdateSubscriptionPackageMutation, useCreateSubscriptionPackageMutation } from '@/features/admin/api/admin.service';
-import type { UpdatePackageRequest, CreatePackageRequest } from '@/features/admin/api/admin.type';
+import { useGetSubscriptionPackagesQuery, useLazyGetSubscriptionPackageDetailQuery, useDeleteSubscriptionPackageMutation, useUpdateSubscriptionPackageMutation, useCreateSubscriptionPackageMutation } from '@/features/admin/api/admin.service';
+import type { UpdatePackageRequest, CreatePackageRequest, SubscriptionPackage } from '@/features/admin/api/admin.type';
+
+const getDefaultPackageFormValues = (): CreatePackageRequest => ({
+  name: '',
+  price: 0,
+  type: 'basic',
+  duration: { value: 1, unit: 'month' },
+  features: {
+    jobPostings: { limit: 3, featured: 0, visibleDuration: 15 },
+    candidateSearch: { enabled: false, viewsPerMonth: 0, downloadCV: false },
+    messaging: { enabled: false, messagesPerMonth: 0 },
+    support: { priority: 'none', analytics: false, advancedReports: false },
+    advertising: { homepageBanner: false, emailCampaign: 0, socialMediaPromotion: false },
+    extras: [],
+  },
+  description: '',
+});
+
+const mapPackageDetailToForm = (pkg: SubscriptionPackage): CreatePackageRequest => ({
+  name: pkg.name,
+  price: pkg.price,
+  type: pkg.type || 'basic',
+  duration: {
+    value: pkg.duration?.value || 1,
+    unit: (pkg.duration?.unit as 'day' | 'month' | 'year') || 'month',
+  },
+  features: {
+    jobPostings: {
+      limit: pkg.features?.jobPostings?.limit ?? 0,
+      featured: pkg.features?.jobPostings?.featured ?? 0,
+      visibleDuration: pkg.features?.jobPostings?.visibleDuration ?? 15,
+    },
+    candidateSearch: {
+      enabled: pkg.features?.candidateSearch?.enabled ?? false,
+      viewsPerMonth: pkg.features?.candidateSearch?.viewsPerMonth ?? 0,
+      downloadCV: pkg.features?.candidateSearch?.downloadCV ?? false,
+    },
+    messaging: {
+      enabled: pkg.features?.messaging?.enabled ?? false,
+      messagesPerMonth: pkg.features?.messaging?.messagesPerMonth ?? 0,
+    },
+    support: {
+      priority: pkg.features?.support?.priority ?? 'none',
+      analytics: pkg.features?.support?.analytics ?? false,
+      advancedReports: pkg.features?.support?.advancedReports ?? false,
+    },
+    advertising: {
+      homepageBanner: pkg.features?.advertising?.homepageBanner ?? false,
+      emailCampaign: pkg.features?.advertising?.emailCampaign ?? 0,
+      socialMediaPromotion: pkg.features?.advertising?.socialMediaPromotion ?? false,
+    },
+    extras: pkg.features?.extras || [],
+  },
+  description: pkg.description || '',
+});
 
 export default function PackagesManagement() {
   const { data: packagesRes, isLoading, refetch } = useGetSubscriptionPackagesQuery();
+  const [getSubscriptionPackageDetail] = useLazyGetSubscriptionPackageDetailQuery();
   const [deleteSubscriptionPackage, { isLoading: isDeleting }] = useDeleteSubscriptionPackageMutation();
   const [updateSubscriptionPackage, { isLoading: isUpdating }] = useUpdateSubscriptionPackageMutation();
   const [createSubscriptionPackage, { isLoading: isCreating }] = useCreateSubscriptionPackageMutation();
@@ -47,6 +102,13 @@ export default function PackagesManagement() {
   const [updatingPackageId, setUpdatingPackageId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPackage, setEditingPackage] = useState<PackageType | null>(null);
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedPackageDetail, setSelectedPackageDetail] = useState<SubscriptionPackage | null>(null);
+  const [packageDetailError, setPackageDetailError] = useState('');
+  const [loadingPackageAction, setLoadingPackageAction] = useState<{
+    id: string;
+    action: 'view' | 'edit';
+  } | null>(null);
 
   const {
     register,
@@ -55,20 +117,7 @@ export default function PackagesManagement() {
     formState: { errors },
     reset,
   } = useForm<CreatePackageRequest>({
-    defaultValues: {
-      name: '',
-      price: 0,
-      type: 'basic',
-      duration: { value: 1, unit: 'month' },
-      features: {
-        jobPostings: { limit: 3, featured: 0, visibleDuration: 15 },
-        candidateSearch: { enabled: false, viewsPerMonth: 0, downloadCV: false },
-        messaging: { enabled: false, messagesPerMonth: 0 },
-        support: { priority: 'none', analytics: false, advancedReports: false },
-        advertising: { homepageBanner: false, emailCampaign: 0, socialMediaPromotion: false },
-      },
-      description: '',
-    },
+    defaultValues: getDefaultPackageFormValues(),
   });
 
   const packagesFromApi: PackageType[] = (packagesRes?.data || []).map((p: any) => ({
@@ -97,12 +146,15 @@ export default function PackagesManagement() {
         const updatePayload: UpdatePackageRequest = {
           packageId: editingPackage.id,
           name: data.name,
+          type: data.type,
           price: data.price,
           duration: {
             value: data.duration.value,
             unit: data.duration.unit as 'day' | 'month' | 'year',
           },
-          isActive: true,
+          features: data.features,
+          description: data.description,
+          isActive: editingPackage.status === 'active',
         };
 
         await updateSubscriptionPackage(updatePayload).unwrap();
@@ -157,6 +209,7 @@ export default function PackagesManagement() {
               emailCampaign: data.features.advertising.emailCampaign,
               socialMediaPromotion: data.features.advertising.socialMediaPromotion,
             },
+            extras: data.features.extras || [],
           },
           description: data.description,
         };
@@ -177,23 +230,43 @@ export default function PackagesManagement() {
     }
   };
 
-  const handleEdit = (pkg: PackageType) => {
-    setEditingPackage(pkg);
-    reset({
-      name: pkg.name,
-      price: pkg.price,
-      type: 'basic',
-      duration: { value: pkg.duration, unit: (pkg.durationUnit as 'day' | 'month' | 'year') || 'month' },
-      features: {
-        jobPostings: { limit: pkg.postLimit, featured: 0, visibleDuration: 15 },
-        candidateSearch: { enabled: false, viewsPerMonth: 0, downloadCV: false },
-        messaging: { enabled: false, messagesPerMonth: 0 },
-        support: { priority: 'none', analytics: false, advancedReports: false },
-        advertising: { homepageBanner: false, emailCampaign: 0, socialMediaPromotion: false },
-      },
-      description: '',
-    });
-    setIsDialogOpen(true);
+  const getErrorMessage = (error: unknown) => {
+    if (error && typeof error === 'object') {
+      const errorObj = error as { data?: { message?: string }; message?: string };
+      return errorObj.data?.message || errorObj.message || 'Unknown error';
+    }
+    return 'Unknown error';
+  };
+
+  const handleViewDetails = async (pkg: PackageType) => {
+    setSelectedPackageDetail(null);
+    setPackageDetailError('');
+    setIsDetailDialogOpen(true);
+    setLoadingPackageAction({ id: pkg.id, action: 'view' });
+
+    try {
+      const detail = await getSubscriptionPackageDetail(pkg.id).unwrap();
+      setSelectedPackageDetail(detail);
+    } catch (error: unknown) {
+      setPackageDetailError(getErrorMessage(error));
+    } finally {
+      setLoadingPackageAction(null);
+    }
+  };
+
+  const handleEdit = async (pkg: PackageType) => {
+    setLoadingPackageAction({ id: pkg.id, action: 'edit' });
+
+    try {
+      const detail = await getSubscriptionPackageDetail(pkg.id).unwrap();
+      setEditingPackage(pkg);
+      reset(mapPackageDetailToForm(detail));
+      setIsDialogOpen(true);
+    } catch (error: unknown) {
+      toast.error(`Failed to load package details: ${getErrorMessage(error)}`);
+    } finally {
+      setLoadingPackageAction(null);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -582,10 +655,30 @@ export default function PackagesManagement() {
                       <div className="flex justify-end space-x-2">
                         <Button
                           size="sm"
-                          onClick={() => handleEdit(pkg)}
-                          disabled={isDeleting || isUpdating || isCreating}
+                          variant="outline"
+                          aria-label={`View details for ${pkg.name}`}
+                          title="View package details"
+                          onClick={() => handleViewDetails(pkg)}
+                          disabled={Boolean(loadingPackageAction) || isDeleting || isUpdating || isCreating}
                         >
-                          <Edit className="h-4 w-4" />
+                          {loadingPackageAction?.id === pkg.id && loadingPackageAction.action === 'view' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          aria-label={`Edit ${pkg.name}`}
+                          title="Edit package"
+                          onClick={() => handleEdit(pkg)}
+                          disabled={Boolean(loadingPackageAction) || isDeleting || isUpdating || isCreating}
+                        >
+                          {loadingPackageAction?.id === pkg.id && loadingPackageAction.action === 'edit' ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Edit className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           size="sm"
@@ -608,6 +701,156 @@ export default function PackagesManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={isDetailDialogOpen}
+        onOpenChange={(open) => {
+          setIsDetailDialogOpen(open);
+          if (!open) {
+            setSelectedPackageDetail(null);
+            setPackageDetailError('');
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[760px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Package Details</DialogTitle>
+            <DialogDescription>
+              Review all package information before making changes.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingPackageAction?.action === 'view' && !selectedPackageDetail ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-gray-600">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              Loading package details...
+            </div>
+          ) : packageDetailError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+              Unable to load package details: {packageDetailError}
+            </div>
+          ) : selectedPackageDetail ? (
+            <div className="space-y-5">
+              <div className="flex flex-col gap-3 rounded-lg border bg-gray-50 p-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-xl font-semibold text-gray-900">{selectedPackageDetail.name}</h3>
+                    <Badge variant="secondary" className="capitalize">
+                      {selectedPackageDetail.type || 'basic'}
+                    </Badge>
+                    {selectedPackageDetail.badge && (
+                      <Badge className="bg-orange-100 text-orange-800 capitalize">
+                        {selectedPackageDetail.badge}
+                      </Badge>
+                    )}
+                    <Badge className={selectedPackageDetail.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                      {selectedPackageDetail.isActive ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {selectedPackageDetail.description || selectedPackageDetail.shortDescription || 'No description provided.'}
+                  </p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="text-2xl font-bold text-orange-600">
+                    {selectedPackageDetail.price.toLocaleString()} VND
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {selectedPackageDetail.duration?.value || 0} {selectedPackageDetail.duration?.unit || 'day'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold text-gray-900">Job postings</h4>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Post limit</dt><dd className="font-medium">{selectedPackageDetail.features?.jobPostings?.limit === -1 ? 'Unlimited' : selectedPackageDetail.features?.jobPostings?.limit ?? 0}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Featured posts</dt><dd className="font-medium">{selectedPackageDetail.features?.jobPostings?.featured ?? 0}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Visible duration</dt><dd className="font-medium">{selectedPackageDetail.features?.jobPostings?.visibleDuration ?? 0} days</dd></div>
+                  </dl>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold text-gray-900">Candidate search</h4>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Enabled</dt><dd className="font-medium">{selectedPackageDetail.features?.candidateSearch?.enabled ? 'Yes' : 'No'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">CV views/month</dt><dd className="font-medium">{selectedPackageDetail.features?.candidateSearch?.viewsPerMonth ?? 0}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Download CV</dt><dd className="font-medium">{selectedPackageDetail.features?.candidateSearch?.downloadCV ? 'Yes' : 'No'}</dd></div>
+                  </dl>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold text-gray-900">Messaging & support</h4>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Messaging</dt><dd className="font-medium">{selectedPackageDetail.features?.messaging?.enabled ? 'Enabled' : 'Disabled'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Messages/month</dt><dd className="font-medium">{selectedPackageDetail.features?.messaging?.messagesPerMonth === -1 ? 'Unlimited' : selectedPackageDetail.features?.messaging?.messagesPerMonth ?? 0}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Support</dt><dd className="font-medium capitalize">{selectedPackageDetail.features?.support?.priority || 'none'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Analytics</dt><dd className="font-medium">{selectedPackageDetail.features?.support?.analytics ? 'Yes' : 'No'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Advanced reports</dt><dd className="font-medium">{selectedPackageDetail.features?.support?.advancedReports ? 'Yes' : 'No'}</dd></div>
+                  </dl>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold text-gray-900">Advertising</h4>
+                  <dl className="mt-3 space-y-2 text-sm">
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Homepage banner</dt><dd className="font-medium">{selectedPackageDetail.features?.advertising?.homepageBanner ? 'Yes' : 'No'}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Email campaigns</dt><dd className="font-medium">{selectedPackageDetail.features?.advertising?.emailCampaign ?? 0}</dd></div>
+                    <div className="flex justify-between gap-4"><dt className="text-gray-500">Social promotion</dt><dd className="font-medium">{selectedPackageDetail.features?.advertising?.socialMediaPromotion ? 'Yes' : 'No'}</dd></div>
+                  </dl>
+                </div>
+              </div>
+
+              {selectedPackageDetail.features?.extras?.length > 0 && (
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold text-gray-900">Additional features</h4>
+                  <ul className="mt-3 space-y-2 text-sm">
+                    {selectedPackageDetail.features.extras.map((extra: { name?: string; description?: string; enabled?: boolean }, index: number) => (
+                      <li key={`${extra.name || 'extra'}-${index}`} className="flex items-start justify-between gap-4 rounded-md bg-gray-50 px-3 py-2">
+                        <div>
+                          <p className="font-medium text-gray-900">{extra.name || 'Additional feature'}</p>
+                          {extra.description && <p className="text-gray-500">{extra.description}</p>}
+                        </div>
+                        <Badge className={extra.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'}>
+                          {extra.enabled ? 'Enabled' : 'Disabled'}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-gray-500">
+                <span>Display order: {selectedPackageDetail.displayOrder ?? 0}</span>
+                {selectedPackageDetail.createdAt && (
+                  <span>Created: {new Date(selectedPackageDetail.createdAt).toLocaleDateString('vi-VN')}</span>
+                )}
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsDetailDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    const row = packages.find((pkg) => pkg.id === (selectedPackageDetail._id || selectedPackageDetail.id));
+                    setIsDetailDialogOpen(false);
+                    if (row) void handleEdit(row);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Package
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

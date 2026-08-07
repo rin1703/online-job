@@ -17,13 +17,13 @@ interface JobDetailsProps {
   job: JobDetail | any; // Allow any for fallback flexibility
 }
 
-const formatCurrency = (amount: number | string | undefined) => {
+const formatCurrency = (amount: number | string | undefined, currency = "USD") => {
   if (amount === undefined || amount === null || amount === "") return "N/A";
   const num = Number(amount);
   if (isNaN(num)) return "N/A";
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD",
+    currency,
     maximumFractionDigits: 0,
   }).format(num);
 };
@@ -56,6 +56,7 @@ export default function JobDetails({ job }: JobDetailsProps) {
   // 2. Salary Fallbacks (salaryMin vs salary.min)
   const salaryMin = job.salaryMin ?? job.salary?.min;
   const salaryMax = job.salaryMax ?? job.salary?.max;
+  const salaryCurrency = job.salaryCurrency || job.salary?.currency || "USD";
 
   // 3. Experience Fallbacks (experienceLevel vs experience vs level)
   const experience = job.experienceLevel || job.experience || job.level || "N/A";
@@ -96,7 +97,7 @@ export default function JobDetails({ job }: JobDetailsProps) {
           {
             icon: DollarSign,
             title: "Salary Range",
-            value: `${formatCurrency(salaryMin)} - ${formatCurrency(salaryMax)}`,
+            value: `${formatCurrency(salaryMin, salaryCurrency)} - ${formatCurrency(salaryMax, salaryCurrency)}`,
             color: "blue",
           },
           {

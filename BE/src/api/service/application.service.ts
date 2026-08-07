@@ -31,8 +31,12 @@ import { uploadToCloudinary } from "../middleware/upload.middleware";
 /**
  * Kiểm tra xem job có đang mở cho ứng tuyển không
  */
-async function isJobOpenForApplications(job: any): Promise<boolean> {
-  return (job as any).status === JobApprovalStatus.APPROVED;
+function isJobOpenForApplications(job: any): boolean {
+  return (
+    (job as any).status === JobListingStatus.ACTIVE &&
+    (job as any).approvalStatus === JobApprovalStatus.APPROVED &&
+    !(job as any).isDeleted
+  );
 };
 
 /**
@@ -135,12 +139,16 @@ export const applyJob = async (
 
     // Step 7: Send notification to recruiter
     const jobSeekerFullName = getUserFullName(jobSeeker);
-    await sendNewApplicationNotification(
-      jobListing.recruiterId.toString(),
-      jobSeekerFullName,
-      (jobListing as any).title,
-      savedApplication._id.toString()
-    );
+    try {
+      await sendNewApplicationNotification(
+        jobListing.recruiterId.toString(),
+        jobSeekerFullName,
+        (jobListing as any).title,
+        savedApplication._id.toString()
+      );
+    } catch (notificationError) {
+      console.warn("Unable to notify recruiter about new application:", notificationError);
+    }
 
     return savedApplication;
   } catch (error: any) {

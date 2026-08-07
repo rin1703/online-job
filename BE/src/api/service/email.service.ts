@@ -218,6 +218,101 @@ export const sendInterviewResponseEmail = async (
   }
 };
 
+// Notify a recruiter when a job seeker submits a new application
+export const sendNewApplicationEmail = async (
+  email: string,
+  recruiterName: string,
+  jobSeekerName: string,
+  jobTitle: string,
+  applicationId: string
+): Promise<boolean> => {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const applicationUrl = `${frontendUrl}/recruiter/applications/${applicationId}`;
+
+    await transporter.sendMail({
+      from: `"Job Portal" <${process.env.EMAIL_FROM}>`,
+      to: email,
+      subject: `New application - ${jobTitle}`,
+      html: `
+        <div style="${baseStyles}">
+          <div style="${headerStyle}">
+            <h2 style="margin: 0;">New Job Application</h2>
+          </div>
+          <div style="padding: 30px; background: white;">
+            <p>Hello ${recruiterName},</p>
+            <p><strong>${jobSeekerName}</strong> has submitted an application for <strong>${jobTitle}</strong>.</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${applicationUrl}" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                View Application
+              </a>
+            </div>
+            <p>Please review the candidate profile on the Job Portal system.</p>
+          </div>
+          <div style="${footerStyle}">
+            <p>&copy; 2025 Job Portal. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return true;
+  } catch (error: any) {
+    throw new Error(`Unable to send new application email: ${error.message}`);
+  }
+};
+
+// Notify a recruiter when an admin approves or rejects a job posting
+export const sendJobModerationEmail = async (
+  email: string,
+  recruiterName: string,
+  jobTitle: string,
+  status: "approved" | "rejected",
+  rejectionReason?: string
+): Promise<boolean> => {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const jobsUrl = `${frontendUrl}/recruiter/jobs`;
+    const isApproved = status === "approved";
+    const statusText = isApproved ? "Approved" : "Rejected";
+    const statusColor = isApproved ? "#4CAF50" : "#f44336";
+
+    await transporter.sendMail({
+      from: `"Job Portal" <${process.env.EMAIL_FROM}>`,
+      to: email,
+      subject: `${statusText} - ${jobTitle}`,
+      html: `
+        <div style="${baseStyles}">
+          <div style="${headerStyle}">
+            <h2 style="margin: 0;">Job Posting Status Update</h2>
+          </div>
+          <div style="padding: 30px; background: white;">
+            <p>Hello ${recruiterName},</p>
+            <p>Your job posting has been reviewed by an administrator.</p>
+            <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 10px 0;"><strong>Position:</strong> ${jobTitle}</p>
+              <p style="margin: 10px 0; color: ${statusColor}; font-size: 16px; font-weight: bold;">${statusText}</p>
+              ${!isApproved && rejectionReason ? `<p style="margin: 10px 0;"><strong>Reason:</strong> ${rejectionReason}</p>` : ""}
+            </div>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${jobsUrl}" style="display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                View Job Postings
+              </a>
+            </div>
+          </div>
+          <div style="${footerStyle}">
+            <p>&copy; 2025 Job Portal. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return true;
+  } catch (error: any) {
+    throw new Error(`Unable to send job moderation email: ${error.message}`);
+  }
+};
+
 // Send interview schedule update notification
 
 // Send interview schedule update notification

@@ -637,11 +637,20 @@ export const respondToInterviewInvitation = async (
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user) {
+      res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        success: false,
+        message: "Authentication required",
+      });
+      return;
+    }
+
     const interviewId = req.params.interviewId as string;
     const dto = new RespondInterviewDTO(req.body);
 
     const interview = await respondToInterview(
       interviewId,
+      req.user.userId,
       dto.accepted,
       dto.rejectionReason
     );

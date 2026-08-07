@@ -1,13 +1,16 @@
-export enum NotificationType {
-  SYSTEM = 'system',
-  APPLICATION_STATUS = 'application_status',
-  APPLICATION_RECEIVED = 'application_received',
-  INTERVIEW_INVITATION = 'interview_invitation',
-  INTERVIEW_RESPONSE = 'interview_response',
-  REPORT_JOB = 'report_job',
-  REPORT_USER = 'report_user',
-  ADMIN_BROADCAST = 'admin_broadcast',
-}
+export const NotificationType = {
+  SYSTEM: 'system',
+  APPLICATION_STATUS: 'application_status',
+  APPLICATION_RECEIVED: 'application_received',
+  INTERVIEW_INVITATION: 'interview_invitation',
+  INTERVIEW_RESPONSE: 'interview_response',
+  JOB_STATUS: 'job_status',
+  REPORT_JOB: 'report_job',
+  REPORT_USER: 'report_user',
+  ADMIN_BROADCAST: 'admin_broadcast',
+} as const;
+
+export type NotificationType = (typeof NotificationType)[keyof typeof NotificationType];
 
 export interface NotificationSender {
   userId?: string;
@@ -26,6 +29,7 @@ export interface NotificationMetadata {
   applicationId?: string;
   interviewId?: string;
   reportId?: string;
+  status?: string;
   actionUrl?: string;
 }
 

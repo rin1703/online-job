@@ -10,6 +10,8 @@ import {
   sendInterviewResponseEmail,
   sendReportNotificationEmail,
   sendBroadcastEmail,
+  sendNewApplicationEmail,
+  sendJobModerationEmail,
 } from "./email.service";
 import mongoose from "mongoose";
 
@@ -41,6 +43,7 @@ export const createNotification = async (data: {
     applicationId?: string;
     interviewId?: string;
     reportId?: string;
+    status?: string;
     actionUrl?: string;
   };
   sendEmail?: boolean;
@@ -69,6 +72,28 @@ export const createNotification = async (data: {
     return savedNotification;
   } catch (error) {
     throw error;
+  }
+};
+
+/**
+ * Send an email for a saved in-app notification and record the real delivery state.
+ * Email failures are non-fatal so the completed business action is not rolled back.
+ */
+const deliverNotificationEmail = async (
+  notification: any,
+  sendEmail: () => Promise<boolean>
+): Promise<boolean> => {
+  try {
+    const delivered = await sendEmail();
+    if (!delivered) return false;
+
+    notification.sentViaEmail = true;
+    notification.emailSentAt = new Date();
+    await notification.save();
+    return true;
+  } catch (error) {
+    console.warn("Unable to deliver notification email:", error);
+    return false;
   }
 };
 
@@ -546,7 +571,7 @@ export const sendInterviewResponseNotification = async (
       : `${jobSeekerName} has declined the interview for "${jobTitle}"`;
 
     // Create in-app notification
-    await createNotification({
+    const notification = await createNotification({
       title,
       content,
       type: NotificationType.INTERVIEW_RESPONSE,
@@ -559,18 +584,20 @@ export const sendInterviewResponseNotification = async (
       recipientRole: UserRole.RECRUITER,
       metadata: {
         interviewId,
-        actionUrl: `/interviews/${interviewId}`
+        actionUrl: `/recruiter/interviews/${interviewId}`
       },
-      sendEmail: true,
+      sendEmail: false,
     });
 
-    // Gửi email
-    await sendInterviewResponseEmail(
-      (recruiter as any).email,
-      jobSeekerName,
-      jobTitle,
-      accepted,
-      rejectionReason
+    await deliverNotificationEmail(
+      notification,
+      () => sendInterviewResponseEmail(
+        (recruiter as any).email,
+        jobSeekerName,
+        jobTitle,
+        accepted,
+        rejectionReason
+      )
     );
   } catch (error) {
     throw error;
@@ -799,7 +826,7 @@ export const sendBroadcastNotification = async (
     // Send notification to each recipient
     for (const recipient of recipients) {
       try {
-        await createNotification({
+        const notification = await createNotification({
           title,
           content,
           type: NotificationType.ADMIN_BROADCAST,
@@ -812,14 +839,23 @@ export const sendBroadcastNotification = async (
           recipientEmail: (recipient as any).email,
           recipientRole: (recipient as any).role as UserRole,
           metadata: {
-            actionUrl: `/notifications` // broadcast usually leads to notification list
+            actionUrl:
+              (recipient as any).role === UserRole.RECRUITER
+                ? "/recruiter/notifications"
+                : (recipient as any).role === UserRole.ADMIN
+                  ? "/admin/notifications"
+                  : "/notifications"
           },
-          sendEmail: true,
+          sendEmail: false,
         });
 
-        // Send email
-        await sendBroadcastEmail((recipient as any).email, title, content);
-        sent++;
+        const emailDelivered = await deliverNotificationEmail(
+          notification,
+          () => sendBroadcastEmail((recipient as any).email, title, content)
+        );
+
+        if (emailDelivered) sent++;
+        else failed++;
       } catch (error) {
         console.error(`Failed to send to ${(recipient as any).email}:`, error);
         failed++;
@@ -853,7 +889,7 @@ export const sendNewApplicationNotification = async (
     const content = `${jobSeekerName} has submitted an application for "${jobTitle}"`;
 
     // Create in-app notification
-    await createNotification({
+    const notification = await createNotification({
       title,
       content,
       type: NotificationType.APPLICATION_RECEIVED,
@@ -866,11 +902,86 @@ export const sendNewApplicationNotification = async (
       recipientRole: UserRole.RECRUITER,
       metadata: {
         applicationId,
-        actionUrl: `/applications/${applicationId}`
+        actionUrl: `/recruiter/applications/${applicationId}`
       },
-      sendEmail: true,
+      sendEmail: false,
     });
+
+    const recruiterName = `${(recruiter as any).firstName} ${(recruiter as any).lastName}`.trim();
+    await deliverNotificationEmail(
+      notification,
+      () => sendNewApplicationEmail(
+        (recruiter as any).email,
+        recruiterName || "Recruiter",
+        jobSeekerName,
+        jobTitle,
+        applicationId
+      )
+    );
   } catch (error) {
     throw error;
   }
+};
+
+// ============== SEND JOB MODERATION NOTIFICATION (to Recruiter) ==============
+
+/**
+ * Notify a recruiter when an admin approves or rejects one of their job posts.
+ */
+export const sendJobModerationNotification = async (
+  adminId: string,
+  recruiterId: string,
+  jobId: string,
+  jobTitle: string,
+  status: "approved" | "rejected",
+  rejectionReason?: string
+): Promise<void> => {
+  const [admin, recruiter] = await Promise.all([
+    User.findById(adminId),
+    User.findById(recruiterId),
+  ]);
+
+  if (!admin) throw new Error("Admin not found");
+  if (!recruiter) throw new Error("Recruiter not found");
+
+  const isApproved = status === "approved";
+  const title = isApproved ? "Job Posting Approved" : "Job Posting Rejected";
+  const content = isApproved
+    ? `Your job posting "${jobTitle}" has been approved and is now visible.`
+    : `Your job posting "${jobTitle}" was rejected.${
+        rejectionReason ? ` Reason: ${rejectionReason}` : ""
+      }`;
+  const adminName = `${(admin as any).firstName} ${(admin as any).lastName}`.trim();
+  const recruiterName = `${(recruiter as any).firstName} ${(recruiter as any).lastName}`.trim();
+
+  const notification = await createNotification({
+    title,
+    content,
+    type: NotificationType.JOB_STATUS,
+    sender: {
+      userId: adminId,
+      role: UserRole.ADMIN,
+      name: adminName || "Admin",
+    },
+    recipientId: recruiterId,
+    recipientEmail: (recruiter as any).email,
+    recipientRole: UserRole.RECRUITER,
+    metadata: {
+      jobId,
+      status,
+      actionUrl: "/recruiter/jobs",
+    },
+    sendEmail: false,
+  });
+
+  await deliverNotificationEmail(
+    notification,
+    () => sendJobModerationEmail(
+      (recruiter as any).email,
+      recruiterName || "Recruiter",
+      jobTitle,
+      status,
+      rejectionReason
+    )
+  );
 };

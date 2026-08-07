@@ -61,6 +61,7 @@ const NotificationSchema = new mongoose.Schema(
       applicationId: Schema.Types.ObjectId,
       interviewId: Schema.Types.ObjectId,
       reportId: Schema.Types.ObjectId,
+      status: String,
       actionUrl: String,
     },
     isRead: {

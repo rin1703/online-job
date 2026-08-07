@@ -9,6 +9,7 @@ export enum NotificationType {
   APPLICATION_APPROVED = "application_approved",
   APPLICATION_REJECTED = "application_rejected",
   INTERVIEW_RESPONSE = "interview_response",
+  JOB_STATUS = "job_status",
 
   // JobSeeker notifications
   APPLICATION_STATUS = "application_status",

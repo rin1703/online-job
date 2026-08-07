@@ -1,5 +1,6 @@
 import { baseApi } from "@/redux/baseApi";
 import type { JobPost } from "@/data/mockAdminData";
+import type { JobDetail } from "@/features/jobs/api/job.type";
 import type {
   UpdateJobApprovalStatusRequest,
   UpdateJobApprovalStatusResponse,
@@ -14,6 +15,8 @@ import type {
   CreatePackageRequest,
   CreatePackageResponse,
   GetAdminDashboardStatsResponse,
+  GetSubscriptionPackageDetailResponse,
+  SubscriptionPackage,
 } from "./admin.type";
 
 export const adminApi = baseApi.injectEndpoints({
@@ -22,8 +25,19 @@ export const adminApi = baseApi.injectEndpoints({
       query: () => ({ url: "jobs", method: "GET" }),
       providesTags: ["Jobs"],
     }),
+    getAdminJobDetail: builder.query<JobDetail, string>({
+      query: (jobId) => ({ url: `jobs/${jobId}`, method: "GET" }),
+      transformResponse: (response: JobDetail | { data: JobDetail }) =>
+        "data" in response ? response.data : response,
+      providesTags: (_result, _error, jobId) => [{ type: "Jobs", id: jobId }],
+    }),
     getSubscriptionPackages: builder.query<GetSubscriptionPackagesResponse, void>({
       query: () => ({ url: "subscription-packages", method: "GET" }),
+      providesTags: ["Profile"],
+    }),
+    getSubscriptionPackageDetail: builder.query<SubscriptionPackage, string>({
+      query: (packageId) => ({ url: `subscription-packages/${packageId}`, method: "GET" }),
+      transformResponse: (response: GetSubscriptionPackageDetailResponse) => response.data,
       providesTags: ["Profile"],
     }),
     updateJobApprovalStatus: builder.mutation<
@@ -98,7 +112,9 @@ export const adminApi = baseApi.injectEndpoints({
 
 export const {
   useGetAdminJobsQuery,
+  useLazyGetAdminJobDetailQuery,
   useGetSubscriptionPackagesQuery,
+  useLazyGetSubscriptionPackageDetailQuery,
   useUpdateJobApprovalStatusMutation,
   useGetListAdminRefundsQuery,
   useUpdateRefundStatusMutation,

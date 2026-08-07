@@ -36,12 +36,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Eye, Check, X, Clock, Building, MapPin, DollarSign, MoreHorizontal } from 'lucide-react';
+import { Search, Eye, Check, X, Clock, Building, MapPin, DollarSign, MoreHorizontal, Loader2 } from 'lucide-react';
 import { type JobPost } from '@/data/mockAdminData';
-import { useGetAdminJobsQuery, useUpdateJobApprovalStatusMutation } from '@/features/admin/api/admin.service';
+import { useGetAdminJobsQuery, useLazyGetAdminJobDetailQuery, useUpdateJobApprovalStatusMutation } from '@/features/admin/api/admin.service';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { ButtonLowercase } from '@/components/ui/button-lowercase';
 import { toast } from 'sonner';
+import JobDetails from '@/pages/recruiter/jobs/components/JobDetails';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -50,6 +51,12 @@ export default function PostsManagement() {
   // const [statusFilter, setStatusFilter] = useState('all');
   const [posts, setPosts] = useState<JobPost[]>([]);
   const { data: jobsData, isLoading } = useGetAdminJobsQuery();
+  const [getAdminJobDetail, {
+    data: selectedJobDetail,
+    isFetching: isJobDetailLoading,
+    error: jobDetailError,
+    reset: resetJobDetail,
+  }] = useLazyGetAdminJobDetailQuery();
   const [updateJobApprovalStatus] = useUpdateJobApprovalStatusMutation();
   useEffect(() => {
     if (!jobsData) return;
@@ -103,6 +110,12 @@ export default function PostsManagement() {
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
+
+  const handleOpenDetails = (post: JobPost) => {
+    setSelectedPost(post);
+    setIsDetailDialogOpen(true);
+    void getAdminJobDetail(post.id);
+  };
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -398,10 +411,7 @@ export default function PostsManagement() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuItem
-                        onClick={() => {
-                          setSelectedPost(post);
-                          setIsDetailDialogOpen(true);
-                        }}
+                        onClick={() => handleOpenDetails(post)}
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
@@ -565,78 +575,84 @@ export default function PostsManagement() {
       </Tabs>
 
       {/* Post Detail Dialog */}
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      <Dialog
+        open={isDetailDialogOpen}
+        onOpenChange={(open) => {
+          setIsDetailDialogOpen(open);
+          if (!open) resetJobDetail();
+        }}
+      >
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Post Details</DialogTitle>
             <DialogDescription>
-              View details and approve or reject the post
+              Review the complete job information before approving or rejecting it.
             </DialogDescription>
           </DialogHeader>
-          {selectedPost && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-medium text-gray-900">Job Title</h4>
-                  <p className="text-gray-600">{selectedPost.title}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Company</h4>
-                  <p className="text-gray-600">{selectedPost.company}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Location</h4>
-                  <p className="text-gray-600">{selectedPost.location}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Salary</h4>
-                  <p className="text-gray-600">{selectedPost.salary}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Job Type</h4>
-                  <p className="text-gray-600">{getTypeLabel(selectedPost.type)}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900">Status</h4>
-                  {getStatusBadge(selectedPost.status)}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Recruiter</h4>
-                <div className="flex items-center space-x-2">
+          <div className="overflow-y-auto pr-1">
+            {selectedPost && (
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-gray-50 px-4 py-3">
+                <div className="flex items-center gap-2">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>{selectedPost.recruiterName.charAt(0)}</AvatarFallback>
                   </Avatar>
-                  <span>{selectedPost.recruiterName}</span>
+                  <div>
+                    <p className="text-xs text-gray-500">Recruiter</p>
+                    <p className="text-sm font-medium">{selectedPost.recruiterName}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-500">Approval status:</span>
+                  {getStatusBadge(selectedPost.status)}
                 </div>
               </div>
+            )}
 
-              {selectedPost.status === 'pending' && (
-                <div className="flex space-x-2 pt-4">
-                  <ButtonLowercase
-                    onClick={() => {
-                      handleApprove(selectedPost.id);
-                      setIsDetailDialogOpen(false);
-                    }}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <Check className="mr-2 h-4 w-4" />
-                    Approve
-                  </ButtonLowercase>
-                  <ButtonLowercase
-                    variant="destructive"
-                    onClick={() => {
-                      setIsDetailDialogOpen(false);
-                      setIsRejectDialogOpen(true);
-                    }}
-                  >
-                    <X className="mr-2 h-4 w-4" />
-                    Reject
-                  </ButtonLowercase>
-                </div>
-              )}
-            </div>
+            {isJobDetailLoading ? (
+              <div className="flex items-center justify-center gap-2 py-16 text-gray-600">
+                <Loader2 className="h-7 w-7 animate-spin" />
+                Loading complete job details...
+              </div>
+            ) : jobDetailError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+                Unable to load the complete job details. Please close this dialog and try again.
+              </div>
+            ) : selectedJobDetail ? (
+              <div className="space-y-3">
+                {selectedJobDetail.rejectionReason && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    <span className="font-semibold">Rejection reason:</span>{' '}
+                    {selectedJobDetail.rejectionReason}
+                  </div>
+                )}
+                <JobDetails job={selectedJobDetail} />
+              </div>
+            ) : null}
+          </div>
+
+          {selectedPost?.status === 'pending' && !isJobDetailLoading && !jobDetailError && (
+            <DialogFooter className="border-t pt-4">
+              <ButtonLowercase
+                onClick={() => {
+                  void handleApprove(selectedPost.id);
+                  setIsDetailDialogOpen(false);
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Check className="mr-2 h-4 w-4" />
+                Approve
+              </ButtonLowercase>
+              <ButtonLowercase
+                variant="destructive"
+                onClick={() => {
+                  setIsDetailDialogOpen(false);
+                  setIsRejectDialogOpen(true);
+                }}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Reject
+              </ButtonLowercase>
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
