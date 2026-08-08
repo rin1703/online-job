@@ -161,11 +161,10 @@ function ApplyForm() {
         });
         
         if (isUrl) {
-          // If URL, send as resumeLink AND include dummy resume to pass validation
+          // If URL, send it through the API's dedicated resumeLink field.
           console.log('🔗 Sending as resumeLink:', resume.trim());
           await applyJob({
             jobId,
-            resume: "URL provided in resumeLink field", // ✅ Dummy text to pass BE validation
             resumeLink: resume.trim(),
             coverLetter: coverLetter || undefined,
             expectedSalary: expectedSalary ? (expectedSalary as number) : undefined,
@@ -240,7 +239,7 @@ function ApplyForm() {
                 disabled={isLoading || isUploadingCV}
               />
 
-              {!cvFile ? (
+              {cvFile === null ? (
                 <div onClick={() => fileInputRef.current?.click()} className="cursor-pointer">
                   <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
                   <p className="text-sm text-gray-600">

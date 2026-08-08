@@ -36,6 +36,10 @@ export interface ForgotPasswordRequest {
 export interface ForgotPasswordResponse {
   success: boolean;
   message: string;
+  data?: {
+    deliveryMode: 'email' | 'demo';
+    demoOtp?: string;
+  };
 }
 
 // Reset Password Types

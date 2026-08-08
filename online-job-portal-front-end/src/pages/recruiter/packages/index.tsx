@@ -32,6 +32,7 @@ export default function PackageManagementPage() {
   const [isRefundOpen, setIsRefundOpen] = useState(false);
   const [isRefunding, setIsRefunding] = useState(false);
   const [selectedPackageForRefund, setSelectedPackageForRefund] = useState<any>(null);
+  const [selectedPackageForDetails, setSelectedPackageForDetails] = useState<any>(null);
   const [refundData, setRefundData] = useState({
     reason: "",
     refundType: "" as "unused" | "system" | ""
@@ -266,7 +267,12 @@ export default function PackageManagementPage() {
   };
 
   const handleViewDetails = (packageId: string) => {
-    console.log('View details for package ID:', packageId);
+    const selectedPackage = packagesToRender.find((pkg: any) => pkg.packageId === packageId);
+    if (!selectedPackage) {
+      toast.error('Package details are unavailable.');
+      return;
+    }
+    setSelectedPackageForDetails(selectedPackage);
   };
 
   const handleOpenRefund = (pkg: any) => {
@@ -442,6 +448,60 @@ export default function PackageManagementPage() {
           );
         })}
       </div>
+
+      <Dialog
+        open={Boolean(selectedPackageForDetails)}
+        onOpenChange={(open) => !open && setSelectedPackageForDetails(null)}
+      >
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle>{selectedPackageForDetails?.packageName}</DialogTitle>
+            <DialogDescription>
+              {selectedPackageForDetails?.description || 'Subscription package details'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPackageForDetails && (
+            <div className="space-y-5 py-2">
+              <div className="grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Price</p>
+                  <p className="font-semibold">{selectedPackageForDetails.formattedPrice}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Duration</p>
+                  <p className="font-semibold">{selectedPackageForDetails.durationDisplay}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Package type</p>
+                  <p className="font-semibold capitalize">{selectedPackageForDetails.packageType}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Status</p>
+                  <p className="font-semibold">
+                    {selectedPackageForDetails.buyed ? 'Current package' : 'Available'}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h3 className="mb-3 font-semibold">Included features</h3>
+                <ul className="space-y-2">
+                  {selectedPackageForDetails.features.map((feature: string, index: number) => (
+                    <li key={`${selectedPackageForDetails.packageId}-detail-${index}`} className="flex gap-2 text-sm">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedPackageForDetails(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isRefundOpen} onOpenChange={setIsRefundOpen}>
         <DialogContent className="sm:max-w-[450px]">

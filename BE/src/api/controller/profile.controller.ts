@@ -14,6 +14,9 @@ import User from "../models/user.model";
 
 const syncAccountFields = async (userId: string, data: Record<string, any>) => {
   const update: Record<string, any> = {};
+  if (typeof data.email === "string" && data.email.trim()) {
+    update.email = data.email.trim().toLowerCase();
+  }
   if (typeof data.phone === "string" && data.phone.trim()) {
     update.phone = data.phone.trim();
   }
@@ -25,6 +28,19 @@ const syncAccountFields = async (userId: string, data: Record<string, any>) => {
   if (Object.keys(update).length > 0) {
     await User.findByIdAndUpdate(userId, { $set: update });
   }
+};
+
+const emailIsUsedByAnotherAccount = async (
+  userId: string,
+  data: Record<string, any>
+): Promise<boolean> => {
+  if (typeof data.email !== "string" || !data.email.trim()) return false;
+
+  return Boolean(await User.exists({
+    _id: { $ne: userId },
+    email: data.email.trim().toLowerCase(),
+    isDeleted: { $ne: true },
+  }));
 };
 
 /**
@@ -63,13 +79,21 @@ export async function createOrUpdateProfile(req: Request, res: Response): Promis
       return;
     }
     // Validation đã được xử lý ở middleware
+    if (await emailIsUsedByAnotherAccount(userId, req.body)) {
+      sendBadRequestResponse(res, "Email is already used by another account");
+      return;
+    }
+
+    const normalizedBody = typeof req.body.email === "string"
+      ? { ...req.body, email: req.body.email.trim().toLowerCase() }
+      : req.body;
     const profileData: UpsertProfileDTO = {
       userId,
-      ...req.body
+      ...normalizedBody
     };
 
     const updatedProfile = await profileService.upsertProfile(profileData);
-    await syncAccountFields(userId, req.body);
+    await syncAccountFields(userId, normalizedBody);
 
     sendSuccessResponse(res, "Profile saved successfully", updatedProfile);
   } catch (error) {
@@ -89,14 +113,22 @@ export async function updateProfilePartially(req: Request, res: Response): Promi
       return;
     }
     
-    const updatedProfile = await profileService.patchProfile(userId, req.body);
+    if (await emailIsUsedByAnotherAccount(userId, req.body)) {
+      sendBadRequestResponse(res, "Email is already used by another account");
+      return;
+    }
+
+    const normalizedBody = typeof req.body.email === "string"
+      ? { ...req.body, email: req.body.email.trim().toLowerCase() }
+      : req.body;
+    const updatedProfile = await profileService.patchProfile(userId, normalizedBody);
 
     if (!updatedProfile) {
       sendNotFoundResponse(res, "Profile");
       return;
     }
 
-    await syncAccountFields(userId, req.body);
+    await syncAccountFields(userId, normalizedBody);
 
     sendSuccessResponse(res, "Profile updated successfully", updatedProfile);
   } catch (error) {

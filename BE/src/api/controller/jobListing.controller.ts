@@ -95,10 +95,10 @@ export const filterRecruiterJobs = async (
   }
 };
 
-export const getJobListingDetail = async (req: Request, res: Response) => {
+export const getJobListingDetail = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = getParamAsString(req.params.id, "id");
-    const jobDetails = await getJobListingDetailService(id);
+    const jobDetails = await getJobListingDetailService(id, req.user);
 
     if (!jobDetails) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -150,12 +150,12 @@ export const createJobListing = async (
   }
 };
 
-export const updateJobListing = async (req: Request, res: Response) => {
+export const updateJobListing = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = getParamAsString(req.params.id, "id");
     const dto = new UpdateJobListingDTO(req.body);
 
-    const result = await updateJobListingService(id.trim(), dto);
+    const result = await updateJobListingService(id.trim(), dto, req.user.userId);
 
     return res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -170,13 +170,13 @@ export const updateJobListing = async (req: Request, res: Response) => {
   }
 };
 
-export const updateRecruiterJobStatus = async (req: Request, res: Response) => {
+export const updateRecruiterJobStatus = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const jobListingId = getParamAsString(req.params.id, "id").trim();
     // Validation đã được xử lý ở middleware
     const dto = new RecruiterStatusDTO(req.body);
 
-    const updatedJob = await updateJobStatusByRecruiter(jobListingId, dto);
+    const updatedJob = await updateJobStatusByRecruiter(jobListingId, dto, req.user.userId);
     if (!updatedJob) {
       return res.status(HTTP_STATUS.NOT_FOUND).json({
         success: false,
@@ -241,11 +241,11 @@ export const updateAdminJobApproval = async (
   }
 };
 
-export const deleteJobListing = async (req: Request, res: Response) => {
+export const deleteJobListing = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const id = getParamAsString(req.params.id, "id");
 
-    const result = await deleteJobListingService(id);
+    const result = await deleteJobListingService(id, req.user.userId);
     return res.status(HTTP_STATUS.OK).json(result);
   } catch (error: any) {
     return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({

@@ -48,6 +48,20 @@ export const validateProfilePatch = (
     return;
   }
 
+  if (body.email !== undefined) {
+    if (typeof body.email !== "string" || !isValidEmail(body.email.trim())) {
+      sendBadRequestResponse(res, VALIDATION_ERROR_MESSAGES.EMAIL_INVALID);
+      return;
+    }
+  }
+
+  if (body.phone !== undefined && body.phone !== "") {
+    if (typeof body.phone !== "string" || !isValidPhone(body.phone.trim())) {
+      sendBadRequestResponse(res, VALIDATION_ERROR_MESSAGES.PHONE_INVALID);
+      return;
+    }
+  }
+
   // Validate expectedSalary if provided
   if (body.expectedSalary !== undefined) {
     if (typeof body.expectedSalary !== 'number' || body.expectedSalary < 0) {

@@ -14,14 +14,16 @@ export const validateApplicationSubmission = (
   res: Response,
   next: NextFunction
 ): void => {
-  const { jobId, resume } = req.body;
+  const { jobId, resume, resumeLink } = req.body;
   const errors: string[] = [];
 
   if (!jobId || jobId.trim().length === 0) {
     errors.push("Job ID is required");
   }
 
-  if (!resume || resume.trim().length === 0) {
+  const hasResume = typeof resume === "string" && resume.trim().length > 0;
+  const hasResumeLink = typeof resumeLink === "string" && resumeLink.trim().length > 0;
+  if (!hasResume && !hasResumeLink) {
     errors.push("Resume/CV is required");
   }
 

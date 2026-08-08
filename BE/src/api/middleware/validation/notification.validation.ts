@@ -54,6 +54,7 @@ export const validateBroadcast = (
       message: "Validation failed",
       errors
     });
+    return;
   }
 
   next();
@@ -226,6 +227,7 @@ export const validateReportResolution = (
       success: false,
       message: `Invalid status. Valid values: ${validStatuses.join(", ")}`
     });
+    return;
   }
 
   if (adminNote && adminNote.length > 1000) {
@@ -302,6 +304,7 @@ export const validateInterviewCreation = (
       message: "Validation failed",
       errors
     });
+    return;
   }
 
   next();

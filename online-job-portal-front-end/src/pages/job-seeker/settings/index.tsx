@@ -39,13 +39,14 @@ export default function JobSeekerSettingsPage() {
   const handleUpdateProfile = async (updatedData: any) => {
     try {
       await updateProfile(updatedData).unwrap();
-      if (updatedData.name || updatedData.phone) {
+      if (updatedData.name || updatedData.phone || updatedData.email) {
         const nameParts = String(updatedData.name || '').trim().split(/\s+/).filter(Boolean);
         dispatch(updateUser({
           ...(nameParts.length > 0
             ? { firstName: nameParts[0], lastName: nameParts.slice(1).join(' ') || nameParts[0] }
             : {}),
           ...(updatedData.phone ? { phone: updatedData.phone } : {}),
+          ...(updatedData.email ? { email: updatedData.email } : {}),
         }));
       }
       toast.success("Profile updated successfully");

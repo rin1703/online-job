@@ -7,7 +7,12 @@ import { ERROR_MESSAGES } from "../../helper/constants.helper";
 import { hashPassword, generateOTP, getOTPExpiryTime } from "../modules/auth";
 import { VALIDATION_RULES, VALIDATION_ERROR_MESSAGES } from "../middleware/validation/constants";
 
-export const sendOTP = async (dto: ForgotPasswordDTO): Promise<boolean> => {
+export type OTPDeliveryResult = {
+  deliveryMode: "email" | "demo";
+  demoOtp?: string;
+};
+
+export const sendOTP = async (dto: ForgotPasswordDTO): Promise<OTPDeliveryResult> => {
   try {
     const user = await User.findOne({ email: dto.email.toLowerCase() });
     if (!user) {
@@ -33,10 +38,18 @@ export const sendOTP = async (dto: ForgotPasswordDTO): Promise<boolean> => {
       isUsed: false,
     });
 
-    // Send OTP via email
-    await sendOTPEmail(dto.email, otpCode);
-
-    return true;
+    // Demo mode is an explicit, opt-in local fallback for presentations when an
+    // SMTP account is unavailable. Production never returns the OTP.
+    try {
+      await sendOTPEmail(dto.email, otpCode);
+      return { deliveryMode: "email" };
+    } catch (error) {
+      if (process.env.EMAIL_DEMO_MODE === "true" && process.env.NODE_ENV !== "production") {
+        return { deliveryMode: "demo", demoOtp: otpCode };
+      }
+      await OTP.deleteMany({ email: dto.email.toLowerCase() });
+      throw error;
+    }
   } catch (error) {
     throw error;
   }

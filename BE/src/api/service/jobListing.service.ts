@@ -59,11 +59,13 @@ export const getJobListingService = async (query: any) => {
   // role is not a DB field; ensure it's not part of the condition
   delete condition.role;
 
+  const isAdmin = String(query.role || "").toLowerCase() === "admin";
+  if (!isAdmin) condition.isDeleted = { $ne: true };
+
   const countRecords = await JobListingModel.countDocuments(condition);
 
   objectPagination = paginationHelper(objectPagination, query, countRecords);
 
-  const isAdmin = String(query.role || "").toLowerCase() === "admin";
   let data: any[] = [];
 
   if (isAdmin) {
@@ -197,7 +199,12 @@ export const filterRecruiterJobsService = async (
 };
 
 export const filterAndSearchJobs = async (dto: FilterJobDTO) => {
-  const query: any = {};
+  // This endpoint is public: never expose draft, hidden, rejected or deleted jobs.
+  const query: any = {
+    status: JobListingStatus.ACTIVE,
+    approvalStatus: JobApprovalStatus.APPROVED,
+    isDeleted: { $ne: true },
+  };
 
   // 🔍 Keyword search (title, skills)
   if (dto.keyword) {
@@ -314,6 +321,11 @@ export const filterAndSearchJobs = async (dto: FilterJobDTO) => {
   if (dto.isRemote !== undefined) query.isRemote = dto.isRemote;
   if (dto.isHybrid !== undefined) query.isHybrid = dto.isHybrid;
 
+  // Client parameters cannot override the mandatory public visibility rules.
+  query.status = JobListingStatus.ACTIVE;
+  query.approvalStatus = JobApprovalStatus.APPROVED;
+  query.isDeleted = { $ne: true };
+
   // 📄 Pagination
   const skip = (dto.page - 1) * dto.limit;
 
@@ -393,16 +405,32 @@ export const getRecruiterJobDashboardService = async (
 };
 
 export const getJobListingDetailService = async (
-  jobListingId: string
+  jobListingId: string,
+  viewer?: { userId?: string; role?: string }
 ): Promise<JobDetailDTO | null> => {
   const cleanId = (jobListingId || "").trim();
   if (!Types.ObjectId.isValid(cleanId)) {
     throw new Error("Invalid job ID");
   }
 
-  await JobListingModel.updateOne({ _id: cleanId }, { $inc: { views: 1 } });
+  const publicVisibility = {
+    status: JobListingStatus.ACTIVE,
+    approvalStatus: JobApprovalStatus.APPROVED,
+    isDeleted: { $ne: true },
+  };
+  const accessQuery: any = { _id: cleanId };
+  if (viewer?.role === "admin") {
+    // Admins need full visibility for moderation.
+  } else if (viewer?.role === "recruiter" && viewer.userId) {
+    accessQuery.$or = [
+      publicVisibility,
+      { recruiterId: viewer.userId, isDeleted: { $ne: true } },
+    ];
+  } else {
+    Object.assign(accessQuery, publicVisibility);
+  }
 
-  const job = await JobListingModel.findById(cleanId)
+  const job = await JobListingModel.findOne(accessQuery)
     .populate("companyId", "name logo")
     .populate({
       path: "locationId",
@@ -413,6 +441,7 @@ export const getJobListingDetailService = async (
     .lean();
 
   if (job) {
+    await JobListingModel.updateOne({ _id: cleanId }, { $inc: { views: 1 } });
     console.log("[getJobListingDetailService] Found job:", job._id, "Recruiter:", job.recruiterId);
   }
 
@@ -683,9 +712,18 @@ export const updateJobDescription = async (
 
 export const updateJobListingService = async (
   jobListingId: string,
-  dto: UpdateJobListingDTO
+  dto: UpdateJobListingDTO,
+  recruiterId: string
 ) => {
   const cleanId = jobListingId.trim();
+  const ownedJob = await JobListingModel.exists({
+    _id: cleanId,
+    recruiterId,
+    isDeleted: { $ne: true },
+  });
+  if (!ownedJob) {
+    throw new Error("Job not found or you do not have permission to update it");
+  }
   await updateJobCore(cleanId, dto);
   await updateJobDescription(cleanId, dto);
 
@@ -704,7 +742,8 @@ export const updateJobListingService = async (
 
 export const updateJobStatusByRecruiter = async (
   jobListingId: string,
-  dto: RecruiterStatusDTO
+  dto: RecruiterStatusDTO,
+  recruiterId: string
 ) => {
   const allowedStatuses = Object.values(JobListingStatus);
   if (!allowedStatuses.includes(dto.status as JobListingStatus)) {
@@ -712,8 +751,12 @@ export const updateJobStatusByRecruiter = async (
   }
 
   // 1. Lấy job trước để kiểm tra approvalStatus
-  const existingJob = await JobListingModel.findById(jobListingId);
-  if (!existingJob) throw new Error("Job not found");
+  const existingJob = await JobListingModel.findOne({
+    _id: jobListingId,
+    recruiterId,
+    isDeleted: { $ne: true },
+  });
+  if (!existingJob) throw new Error("Job not found or you do not have permission to update it");
 
   // 2. Chỉ cho phép đổi status nếu đã được admin duyệt
   if (existingJob.approvalStatus !== "approved") {
@@ -723,8 +766,8 @@ export const updateJobStatusByRecruiter = async (
   }
 
   // 3. Tiến hành update status như code cũ
-  const updated = await JobListingModel.findByIdAndUpdate(
-    jobListingId,
+  const updated = await JobListingModel.findOneAndUpdate(
+    { _id: jobListingId, recruiterId },
     { status: dto.status },
     { new: true }
   )
@@ -837,14 +880,14 @@ export const updateJobApprovalByAdmin = async (
   return updated;
 };
 
-export const deleteJobListingService = async (jobId: string) => {
+export const deleteJobListingService = async (jobId: string, recruiterId: string) => {
   if (!Types.ObjectId.isValid(jobId)) {
     throw new Error(ERROR_MESSAGES.INVALID_JOB_ID);
   }
 
-  const job = await JobListingModel.findById(jobId);
+  const job = await JobListingModel.findOne({ _id: jobId, recruiterId });
   if (!job) {
-    throw new Error(ERROR_MESSAGES.JOB_LISTING_NOT_FOUND);
+    throw new Error("Job not found or you do not have permission to delete it");
   }
 
   if (job.isDeleted) {

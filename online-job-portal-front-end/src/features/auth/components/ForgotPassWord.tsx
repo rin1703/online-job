@@ -37,7 +37,12 @@ const ForgotPassword: React.FC = () => {
     try {
       const response = await forgotPassword({ email }).unwrap();
       if (response.success) {
-        toast.success(response.message || "OTP sent to your email!");
+        if (response.data?.deliveryMode === 'demo' && response.data.demoOtp) {
+          setOtp(response.data.demoOtp.split(''));
+          toast.success(`Demo OTP: ${response.data.demoOtp}`);
+        } else {
+          toast.success(response.message || "OTP sent to your email!");
+        }
         setStep(2);
         startResendCountdown(60);
       } else {
@@ -85,7 +90,12 @@ const ForgotPassword: React.FC = () => {
     try {
       const response = await forgotPassword({ email }).unwrap();
       if (response.success) {
-        toast.success("New OTP sent to your email!");
+        if (response.data?.deliveryMode === 'demo' && response.data.demoOtp) {
+          setOtp(response.data.demoOtp.split(''));
+          toast.success(`New demo OTP: ${response.data.demoOtp}`);
+        } else {
+          toast.success("New OTP sent to your email!");
+        }
         otpRefs.current[0]?.focus();
         startResendCountdown(60);
       } else {
@@ -174,6 +184,7 @@ const ForgotPassword: React.FC = () => {
       <button
         type="button"
         onClick={goSignIn}
+        className="hover:underline focus:underline"
         style={{
           background: "transparent",
           border: "none",
@@ -185,8 +196,6 @@ const ForgotPassword: React.FC = () => {
           display: "block",
           margin: "0 auto",
         }}
-        onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
-        onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
       >
         Return to sign in
       </button>
@@ -226,6 +235,7 @@ const ForgotPassword: React.FC = () => {
         type="button"
         onClick={handleResendOtp}
         disabled={resendIn > 0}
+        className="enabled:hover:underline enabled:focus:underline"
         style={{
           background: "transparent",
           border: "none",
@@ -235,10 +245,6 @@ const ForgotPassword: React.FC = () => {
           color: resendIn > 0 ? "#9CA3AF" : "#E65100",
           fontSize: "0.875rem",
         }}
-        onMouseOver={(e) => {
-          if (!resendIn) e.currentTarget.style.textDecoration = "underline";
-        }}
-        onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
       >
         {resendIn > 0 ? `Resend OTP in ${resendIn}s` : "Resend OTP code"}
       </button>
@@ -328,6 +334,7 @@ const ForgotPassword: React.FC = () => {
       <button
         type="button"
         onClick={goSignIn}
+        className="hover:underline focus:underline"
         style={{
           background: "transparent",
           border: "none",
@@ -339,8 +346,6 @@ const ForgotPassword: React.FC = () => {
           display: "block",
           margin: "0 auto",
         }}
-        onMouseOver={(e) => (e.currentTarget.style.textDecoration = "underline")}
-        onMouseOut={(e) => (e.currentTarget.style.textDecoration = "none")}
       >
         Return to sign in
       </button>

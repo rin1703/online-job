@@ -11,11 +11,12 @@ export const handleForgotPassword = async (
   try {
     // Validation đã được xử lý ở middleware
     const dto = new ForgotPasswordDTO(req.body);
-    await sendOTP(dto);
+    const delivery = await sendOTP(dto);
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
       message: SUCCESS_MESSAGES.OTP_SENT,
+      data: delivery,
     });
   } catch (error) {
     res.status(HTTP_STATUS.BAD_REQUEST).json({
