@@ -1,8 +1,9 @@
-import { host } from "./src/config";
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+
+const backendTarget = 'http://localhost:8080';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,7 +17,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api/v1': {
-        target: host,
+        target: backendTarget,
         changeOrigin: true,
         secure: false,
       },

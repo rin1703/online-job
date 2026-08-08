@@ -39,8 +39,12 @@ export default function SignInForm() {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      console.log("[SignInForm] Login attempt with email:", values.email);
-      const response = await signIn(values).unwrap();
+      const credentials = {
+        email: values.email.trim(),
+        password: values.password,
+      };
+      console.log("[SignInForm] Login attempt with email:", credentials.email);
+      const response = await signIn(credentials).unwrap();
 
       console.log("[SignInForm] Response received:", {
         success: response.success,
@@ -123,8 +127,10 @@ export default function SignInForm() {
         message: error?.message,
         fullError: error,
       });
-      const errorMessage =
-        error?.data?.message || error?.message || "Invalid credentials or server error";
+      const errorMessage = error?.data?.message
+        || (error?.status === "FETCH_ERROR"
+          ? "Cannot connect to the server. Please check that the backend is running."
+          : error?.error || error?.message || "Invalid credentials or server error");
       toast.error(errorMessage);
     }
   };
