@@ -16,6 +16,10 @@ export interface JobSeeker {
   lastName: string;
   email: string;
   phone: string;
+  skills?: string[];
+  experience?: string;
+  education?: string;
+  portfolio?: string;
 }
 
 //  KHỚP VỚI BACKEND - ĐỔI TÊN TỪ "Post" SANG "Job"

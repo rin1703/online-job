@@ -479,7 +479,7 @@ export const validateRecruiterSubscription = async (userId: string) => {
   }
 
   // 3) Kiểm tra limit
-  if (subscription.features.jobPostings.limit <= 0) {
+  if (subscription.features.jobPostings.limit === 0) {
     throw new Error("No available job posting slots remaining");
   }
 
@@ -594,7 +594,9 @@ export const createJobListingService = async (
   await jobListing.save();
 
   // decrement available slot and mark subscription usage
-  subscription.features.jobPostings.limit -= 1;
+  if (subscription.features.jobPostings.limit > 0) {
+    subscription.features.jobPostings.limit -= 1;
+  }
 
   if (!subscription.firstUsageAt) {
     subscription.firstUsageAt = new Date();
@@ -811,7 +813,10 @@ export const updateJobApprovalByAdmin = async (
     });
 
     if (subscription) {
-      subscription.features.jobPostings.limit += 1;
+      if (subscription.features.jobPostings.limit >= 0) {
+        subscription.features.jobPostings.limit += 1;
+        subscription.markModified("features");
+      }
       await subscription.save();
     }
   }

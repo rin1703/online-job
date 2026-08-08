@@ -10,6 +10,22 @@ import {
   handleInternalError,
 } from "../../helper/response.helper";
 import { ERROR_MESSAGES } from "../../helper/constants.helper";
+import User from "../models/user.model";
+
+const syncAccountFields = async (userId: string, data: Record<string, any>) => {
+  const update: Record<string, any> = {};
+  if (typeof data.phone === "string" && data.phone.trim()) {
+    update.phone = data.phone.trim();
+  }
+  if (typeof data.name === "string" && data.name.trim()) {
+    const nameParts = data.name.trim().split(/\s+/);
+    update.firstName = nameParts.shift();
+    update.lastName = nameParts.join(" ") || update.firstName;
+  }
+  if (Object.keys(update).length > 0) {
+    await User.findByIdAndUpdate(userId, { $set: update });
+  }
+};
 
 /**
  * Retrieves user profile by userId
@@ -53,6 +69,7 @@ export async function createOrUpdateProfile(req: Request, res: Response): Promis
     };
 
     const updatedProfile = await profileService.upsertProfile(profileData);
+    await syncAccountFields(userId, req.body);
 
     sendSuccessResponse(res, "Profile saved successfully", updatedProfile);
   } catch (error) {
@@ -78,6 +95,8 @@ export async function updateProfilePartially(req: Request, res: Response): Promi
       sendNotFoundResponse(res, "Profile");
       return;
     }
+
+    await syncAccountFields(userId, req.body);
 
     sendSuccessResponse(res, "Profile updated successfully", updatedProfile);
   } catch (error) {

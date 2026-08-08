@@ -61,5 +61,7 @@ export const baseApi = createApi({
     "Reports",
     "Chat",
     "Refunds",
+    "Payments",
+    "Interviews",
   ],
 });

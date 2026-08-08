@@ -3,7 +3,7 @@
  * Handles both authenticated (backend API) and guest (localStorage) users
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -33,7 +33,7 @@ export const useFavoriteJobs = () => {
    * IMPORTANT: Depend on localSavedJobs Set directly to trigger re-renders
    */
   const isFavorite = useCallback(
-    (jobId: string, jobIsFavorite?: boolean) => {
+    (jobId: string, _jobIsFavorite?: boolean) => {
       // Check if job is in the Set
       const localState = localSavedJobs.has(jobId);
 

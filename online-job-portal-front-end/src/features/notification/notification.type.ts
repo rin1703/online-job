@@ -4,6 +4,7 @@ export const NotificationType = {
   APPLICATION_RECEIVED: 'application_received',
   INTERVIEW_INVITATION: 'interview_invitation',
   INTERVIEW_RESPONSE: 'interview_response',
+  INTERVIEW_RESULT: 'interview_result',
   JOB_STATUS: 'job_status',
   REPORT_JOB: 'report_job',
   REPORT_USER: 'report_user',

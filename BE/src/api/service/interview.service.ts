@@ -8,6 +8,7 @@ import {
   sendInterviewInvitationNotification,
   sendInterviewUpdateNotification,
   sendInterviewResponseNotification,
+  sendInterviewResultNotification,
 } from "./notification.service";
 import { InterviewStatus } from "../models/enum/interviewStatus.enum";
 import {
@@ -67,6 +68,28 @@ export const createInterview = async (data: {
   note?: string;
 }): Promise<any> => {
   try {
+    const application = await Application.findById(data.applicationId);
+    if (!application) {
+      throw new Error("Application not found");
+    }
+    if (application.recruiterId.toString() !== data.recruiterId) {
+      throw new Error("You cannot schedule an interview for another recruiter's application");
+    }
+    if (
+      application.jobId.toString() !== data.jobId ||
+      application.jobSeekerId.toString() !== data.jobSeekerId
+    ) {
+      throw new Error("Interview data does not match the selected application");
+    }
+
+    const existingInterview = await Interview.findOne({
+      applicationId: data.applicationId,
+      status: { $in: ["pending", "accepted"] },
+    });
+    if (existingInterview) {
+      throw new Error("An active interview already exists for this application");
+    }
+
     const interview = new Interview({
       jobId: data.jobId,
       applicationId: data.applicationId,
@@ -188,13 +211,24 @@ export const getInterviewsForRecruiter = async (
  * Lấy chi tiết 1 lịch phỏng vấn
  */
 export const getInterviewById = async (
-  interviewId: string
+  interviewId: string,
+  userId?: string,
+  userRole?: string
 ): Promise<any | null> => {
   try {
     const interview = await Interview.findById(interviewId)
       .populate("jobSeekerId", "firstName lastName email")
       .populate("recruiterId", "firstName lastName email")
       .populate("jobId", "title");
+    if (!interview) return null;
+
+    const isParticipant =
+      interview.jobSeekerId?._id?.toString() === userId ||
+      interview.recruiterId?._id?.toString() === userId;
+    if (userRole !== "admin" && !isParticipant) {
+      throw new Error("You do not have permission to view this interview");
+    }
+
     return interview;
   } catch (error) {
     throw error;
@@ -221,6 +255,9 @@ export const respondToInterview = async (
 
     if (interview.jobSeekerId.toString() !== jobSeekerId) {
       throw new Error("Bạn không có quyền phản hồi lịch phỏng vấn này");
+    }
+    if (interview.status !== InterviewStatus.PENDING) {
+      throw new Error("This interview invitation has already been answered");
     }
 
     // Step 2: Update interview status and response
@@ -348,21 +385,47 @@ export const updateInterview = async (
 export const updateInterviewResult = async (
   interviewId: string,
   passed: boolean,
-  feedback: string
+  feedback: string,
+  recruiterId: string
 ): Promise<any | null> => {
   try {
-    const interview = await Interview.findByIdAndUpdate(
-      interviewId,
-      {
-        status: "completed",
-        result: {
-          passed,
-          feedback,
-          evaluatedAt: new Date(),
-        },
-      },
-      { new: true }
-    );
+    const interview = await Interview.findById(interviewId).populate("jobId", "title");
+    if (!interview) return null;
+    if (interview.recruiterId.toString() !== recruiterId) {
+      throw new Error("You do not have permission to update this interview result");
+    }
+    if (![InterviewStatus.ACCEPTED, InterviewStatus.COMPLETED].includes(interview.status)) {
+      throw new Error("Results can only be submitted for an accepted interview");
+    }
+
+    interview.status = InterviewStatus.COMPLETED;
+    interview.result = {
+      passed,
+      feedback,
+      evaluatedAt: new Date(),
+    };
+    await interview.save();
+
+    await Application.findByIdAndUpdate(interview.applicationId, {
+      status: passed ? "approved" : "rejected",
+      recruiterNote: feedback,
+      reviewedAt: new Date(),
+      reviewedBy: recruiterId,
+      statusUpdatedAt: new Date(),
+    });
+
+    try {
+      await sendInterviewResultNotification(
+        interview.jobSeekerId.toString(),
+        interviewId,
+        (interview.jobId as any)?.title || "Position",
+        passed,
+        feedback,
+        recruiterId
+      );
+    } catch (notificationError) {
+      console.warn("Unable to notify job seeker about interview result:", notificationError);
+    }
 
     return interview;
   } catch (error) {

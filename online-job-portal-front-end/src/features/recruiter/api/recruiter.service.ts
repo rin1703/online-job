@@ -8,6 +8,8 @@ import type {
   BuySubscriptionResponse,
   CreateRefundRequest,
   CreateRefundResponse,
+  PaymentHistoryParams,
+  PaymentHistoryResponse,
 } from './recruiter.type';
 
 export const recruiterApi = baseApi.injectEndpoints({
@@ -22,17 +24,22 @@ export const recruiterApi = baseApi.injectEndpoints({
     }),
     createPayment: builder.mutation<CreatePaymentResponse, CreatePaymentRequest>({
       query: (body) => ({ url: 'payment/create', method: 'POST', body }),
+      invalidatesTags: ['Payments'],
     }),
     buySubscriptionWithWallet: builder.mutation<BuySubscriptionResponse, BuySubscriptionRequest>({
       query: (body) => ({ url: 'subscription/purchase/wallet', method: 'POST', body }),
-      invalidatesTags: ['Profile'],
+      invalidatesTags: ['Profile', 'Payments'],
     }),
     createRefund: builder.mutation<CreateRefundResponse, CreateRefundRequest>({
       query: (body) => ({ url: 'refunds/create', method: 'POST', body }),
     }),
     verifyPayment: builder.mutation<{ ok: boolean; success: boolean; status: string; payment?: any }, { orderCode: string }>({
       query: (body) => ({ url: 'payment/verify', method: 'POST', body }),
-      invalidatesTags: ['Profile'],
+      invalidatesTags: ['Profile', 'Payments'],
+    }),
+    getPaymentHistory: builder.query<PaymentHistoryResponse, PaymentHistoryParams>({
+      query: (params) => ({ url: 'payment/history', method: 'GET', params }),
+      providesTags: ['Payments'],
     }),
   }),
 });
@@ -44,4 +51,5 @@ export const {
   useBuySubscriptionWithWalletMutation,
   useCreateRefundMutation,
   useVerifyPaymentMutation,
+  useGetPaymentHistoryQuery,
 } = recruiterApi;

@@ -72,19 +72,14 @@ export const enforceJobPostCreationLimit = async (
       return next();
     }
 
-    const used = await JobListingModel.countDocuments({
-      recruiterId: userId,
-      status: JobListingStatus.ACTIVE,
-      isDeleted: false,
-    });
-
-    if (used >= limit) {
+    // The subscription snapshot stores remaining slots. A negative value means unlimited.
+    if (limit === 0) {
       return res.status(403).json({
         ok: false,
         message: "Job posting limit reached for your current plan",
         requiresUpgrade: true,
         overLimit: true,
-        usage: { used, limit, available: 0 },
+        usage: { available: 0 },
       });
     }
 

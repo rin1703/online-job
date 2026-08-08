@@ -4,7 +4,8 @@ import {
   FileText, 
   Mail, 
   Calendar, 
-  CheckCircle, 
+  CheckCircle,
+  ClipboardCheck,
   AlertTriangle, 
   AlertOctagon, 
   Megaphone,
@@ -41,6 +42,11 @@ export const NOTIFICATION_TYPE_CONFIG: Record<NotificationType, {
     color: 'bg-indigo-100 text-indigo-800',
     icon: CheckCircle,
   },
+  [NotificationType.INTERVIEW_RESULT]: {
+    label: 'Interview Result',
+    color: 'bg-emerald-100 text-emerald-800',
+    icon: ClipboardCheck,
+  },
   [NotificationType.JOB_STATUS]: {
     label: 'Job Status',
     color: 'bg-cyan-100 text-cyan-800',
@@ -70,6 +76,7 @@ export const NOTIFICATION_TYPE_FILTER_OPTIONS = [
   { value: NotificationType.APPLICATION_RECEIVED, label: NOTIFICATION_TYPE_CONFIG[NotificationType.APPLICATION_RECEIVED].label },
   { value: NotificationType.INTERVIEW_INVITATION, label: NOTIFICATION_TYPE_CONFIG[NotificationType.INTERVIEW_INVITATION].label },
   { value: NotificationType.INTERVIEW_RESPONSE, label: NOTIFICATION_TYPE_CONFIG[NotificationType.INTERVIEW_RESPONSE].label },
+  { value: NotificationType.INTERVIEW_RESULT, label: NOTIFICATION_TYPE_CONFIG[NotificationType.INTERVIEW_RESULT].label },
   { value: NotificationType.JOB_STATUS, label: NOTIFICATION_TYPE_CONFIG[NotificationType.JOB_STATUS].label },
   { value: NotificationType.ADMIN_BROADCAST, label: NOTIFICATION_TYPE_CONFIG[NotificationType.ADMIN_BROADCAST].label },
 ] as const;

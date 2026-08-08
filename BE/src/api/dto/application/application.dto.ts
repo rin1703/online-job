@@ -106,6 +106,7 @@ export class ApplicationFilterDTO {
     | "rejected"
     | "interview_scheduled"
     | "withdrawn";
+  search?: string;
   page?: number;
   limit?: number;
   sortBy?: "appliedAt" | "reviewedAt" | "status";
@@ -116,6 +117,7 @@ export class ApplicationFilterDTO {
     this.jobSeekerId = data.jobSeekerId;
     this.recruiterId = data.recruiterId;
     this.status = data.status;
+    this.search = data.search;
     this.page = data.page || 1;
     this.limit = data.limit || 10;
     this.sortBy = data.sortBy || "appliedAt";

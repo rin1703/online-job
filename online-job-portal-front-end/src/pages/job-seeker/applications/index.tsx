@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { ButtonLowercase } from "@/components/ui/button-lowercase";
@@ -47,8 +47,14 @@ export default function JobSeekerApplicationsPage() {
     return saved ? parseInt(saved, 10) : 1;
   });
 
+  const deferredSearchTerm = useDeferredValue(searchTerm.trim());
+
   // Fetch applications from API
   const { data, isLoading, isError, error } = useGetApplicationsQuery({
+    search: deferredSearchTerm || undefined,
+    status: selectedStatus === "all" ? undefined : selectedStatus,
+    page: currentPage,
+    limit: APPLICATION_CONSTANTS.ITEMS_PER_PAGE,
     sortBy: "appliedAt",
     sortOrder: "desc",
   });
@@ -84,34 +90,13 @@ export default function JobSeekerApplicationsPage() {
     };
   }, []);
 
-  // Filter applications
-  const filteredApplications = useMemo(() => {
-    let filtered = [...applications];
-
-    // Filter by status
-    if (selectedStatus !== "all") {
-      filtered = filtered.filter((app) => app.status === selectedStatus);
-    }
-
-    // Filter by search term (job title)
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      filtered = filtered.filter((app) => {
-        const jobTitle = app.jobId.title.toLowerCase();
-        return jobTitle.includes(search);
-      });
-    }
-
-    return filtered;
-  }, [applications, searchTerm, selectedStatus]);
-
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, selectedStatus]);
 
   // Pagination
-  const totalPages = Math.ceil(filteredApplications.length / APPLICATION_CONSTANTS.ITEMS_PER_PAGE);
+  const totalPages = data?.totalPages || 0;
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
@@ -119,10 +104,7 @@ export default function JobSeekerApplicationsPage() {
     }
   }, [currentPage, totalPages]);
 
-  const paginatedApplications = filteredApplications.slice(
-    (currentPage - 1) * APPLICATION_CONSTANTS.ITEMS_PER_PAGE,
-    currentPage * APPLICATION_CONSTANTS.ITEMS_PER_PAGE,
-  );
+  const paginatedApplications = applications;
 
   const handleViewDetail = (id: string) => {
     sessionStorage.setItem(APPLICATION_CONSTANTS.SCROLL_POSITION_KEY, window.scrollY.toString());
@@ -166,7 +148,7 @@ export default function JobSeekerApplicationsPage() {
             <h1 className="text-3xl font-bold text-gray-900">My Applications</h1>
             {(searchTerm || selectedStatus !== "all") && (
               <p className="text-gray-600 text-sm mt-2">
-                Found {filteredApplications.length} results
+                Found {data?.total || 0} results
               </p>
             )}
           </div>

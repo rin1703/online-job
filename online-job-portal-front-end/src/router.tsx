@@ -47,7 +47,6 @@ import SettingLayout from "./components/layouts/job-seeker/SettingLayout";
 
 // Recruiter pages
 import RecruiterLayout from "./components/layouts/recruiter/RecruiterLayout";
-import OverviewPage from "./pages/recruiter/overview";
 import PackageManagementPage from "./pages/recruiter/packages";
 import JobManagementPage from "./pages/recruiter/jobs";
 import SettingsPage from "./pages/recruiter/settings";
@@ -67,6 +66,7 @@ import ChatPage from "./features/chat/ChatPage";
 import PublicProfilePage from "@/pages/public-profile";
 import PaymentSuccess from "@/pages/payment/PaymentSuccess.tsx";
 import PaymentFailure from "@/pages/payment/PaymentFailure.tsx";
+import PaymentHistoryPage from "@/pages/recruiter/payments";
 
 //Company
 import CompanyDetailPage from "./pages/companies/CompanyDetailPage.tsx";
@@ -157,6 +157,7 @@ function Router() {
           <Route path="overview" element={<Navigate to="/recruiter/jobs" replace />} />
           <Route path="jobs" element={<JobManagementPage />} />
           <Route path="packages" element={<PackageManagementPage />} />
+          <Route path="payments" element={<PaymentHistoryPage />} />
           {/* ✅ New: Job Listing → Applications flow */}
           <Route path="applications" element={<JobListingForApplications />} />
           <Route path="applications/jobs/:jobId" element={<ApplicationsPage />} />

@@ -194,6 +194,21 @@ export const getApplications = async (
   try {
     // Step 1: Build query
     const query = buildApplicationQuery(filter);
+    if (filter.search?.trim()) {
+      const escapedSearch = filter.search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const matchingJobs = await JobListing.find({
+        title: { $regex: escapedSearch, $options: "i" },
+      }).select("_id").lean();
+      const matchingJobIds = matchingJobs.map((job: any) => job._id);
+
+      if (filter.jobId) {
+        query.jobId = matchingJobIds.some((id: any) => id.toString() === filter.jobId)
+          ? filter.jobId
+          : { $in: [] };
+      } else {
+        query.jobId = { $in: matchingJobIds };
+      }
+    }
 
     // Step 2: Calculate pagination
     const { page: currentPage, limit: itemsPerPage, skip: skipItems } = validatePaginationParams({

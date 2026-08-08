@@ -50,9 +50,6 @@ router.get(
   filterRecruiterJobs
 );
 
-/* ---------- GET DETAIL ---------- */
-router.get("/:id", optionalAuth, getJobListingDetail);
-
 /* ---------- RECRUITER DASHBOARD ---------- */
 router.get(
   "/recruiter/dashboard",
@@ -60,6 +57,9 @@ router.get(
   requireRole(UserRole.RECRUITER),
   getRecruiterJobDashboard
 );
+
+/* ---------- GET DETAIL ---------- */
+router.get("/:id", optionalAuth, getJobListingDetail);
 
 /* ---------- CREATE JOB LISTING ---------- */
 router.post(

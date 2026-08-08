@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -14,9 +14,11 @@ import { AccountSection } from "@/features/job-seeker/components/profile/compone
 import CVSection from "@/features/job-seeker/components/profile/components/sections/CVSection";
 import { useGetProfileQuery, useUpdateProfileMutation } from "@/redux/features/profile";
 import type { RootState } from "@/redux/store";
+import { updateUser } from "@/features/auth/api/auth.slice";
 
 export default function JobSeekerSettingsPage() {
   const location = useLocation();
+  const dispatch = useDispatch();
   // Get userId and role from auth state
   const userId = useSelector((state: RootState) => state.auth.user?.userId);
   const userName = useSelector((state: RootState) => {
@@ -37,6 +39,15 @@ export default function JobSeekerSettingsPage() {
   const handleUpdateProfile = async (updatedData: any) => {
     try {
       await updateProfile(updatedData).unwrap();
+      if (updatedData.name || updatedData.phone) {
+        const nameParts = String(updatedData.name || '').trim().split(/\s+/).filter(Boolean);
+        dispatch(updateUser({
+          ...(nameParts.length > 0
+            ? { firstName: nameParts[0], lastName: nameParts.slice(1).join(' ') || nameParts[0] }
+            : {}),
+          ...(updatedData.phone ? { phone: updatedData.phone } : {}),
+        }));
+      }
       toast.success("Profile updated successfully");
     } catch (error) {
       const errorMessage = getErrorMessage(error, "Failed to update profile");

@@ -46,7 +46,7 @@ export const chatApi = baseApi.injectEndpoints({
     }),
     getMessages: builder.query<Message[], string>({
       query: (conversationId) => `/messages/${conversationId}`,
-      providesTags: (result, error, conversationId) => [{ type: "Chat", id: conversationId }],
+      providesTags: (_result, _error, conversationId) => [{ type: "Chat", id: conversationId }],
       transformResponse: (response: ApiResponse<{ messages: Message[] }>) => response.data.messages,
     }),
     sendMessage: builder.mutation<Message, { conversationId: string; content: string; attachments?: any[] }>({
@@ -55,7 +55,7 @@ export const chatApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { conversationId }) => [
+      invalidatesTags: (_result, _error, { conversationId }) => [
         "Chat",
         { type: "Chat", id: conversationId }
       ],

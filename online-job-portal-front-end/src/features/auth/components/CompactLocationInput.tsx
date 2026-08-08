@@ -17,7 +17,6 @@ interface CompactLocationInputProps {
 }
 
 export const CompactLocationInput: React.FC<CompactLocationInputProps> = ({
-  value,
   onChange,
   error,
   disabled,
@@ -25,18 +24,6 @@ export const CompactLocationInput: React.FC<CompactLocationInputProps> = ({
   const [selectedProvinceCode, setSelectedProvinceCode] = useState<number | null>(null);
   const [selectedDistrictCode, setSelectedDistrictCode] = useState<number | null>(null);
   const [selectedWardCode, setSelectedWardCode] = useState<number | null>(null);
-
-  // Parse location string to extract ward, district, province
-  const parseLocation = (locationStr: string) => {
-    const parts = locationStr.split(',').map(p => p.trim());
-    return {
-      ward: parts[0] || '',
-      district: parts[1] || '',
-      province: parts[2] || '',
-    };
-  };
-
-  const { ward, district, province } = parseLocation(value);
 
   // Fetch provinces
   const { data: provinces = [] } = useGetProvincesQuery();

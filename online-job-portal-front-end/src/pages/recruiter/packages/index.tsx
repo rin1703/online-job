@@ -206,6 +206,10 @@ export default function PackageManagementPage() {
     return [];
   }, [data]);
 
+  const subscriptionData = (data as any)?.data || data;
+  const currentSubscription = subscriptionData?.subscription;
+  const currentPackage = packagesToRender.find((pkg: any) => pkg.buyed);
+
   const handlePurchase = async (packageId: string) => {
     try {
       setIsPurchasing(true);
@@ -318,6 +322,33 @@ export default function PackageManagementPage() {
       <p className="text-text-blur mb-8">
         Choose the right plan to find talented candidates for your company.
       </p>
+
+      {currentSubscription && currentPackage && (
+        <div className="mb-8 grid gap-4 rounded-xl border border-green-200 bg-green-50 p-5 shadow-sm md:grid-cols-4">
+          <div>
+            <p className="text-xs font-medium uppercase text-green-700">Current package</p>
+            <p className="mt-1 text-lg font-bold text-green-900">{currentPackage.packageName}</p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-green-700">Started</p>
+            <p className="mt-1 font-semibold text-green-900">
+              {new Date(currentSubscription.startDate).toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-green-700">Expires</p>
+            <p className="mt-1 font-semibold text-green-900">
+              {new Date(currentSubscription.endDate).toLocaleDateString('vi-VN')}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-green-700">Remaining</p>
+            <p className="mt-1 font-semibold text-green-900">
+              {currentSubscription.daysRemaining} day(s)
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {packagesToRender.map((pkg: any) => {

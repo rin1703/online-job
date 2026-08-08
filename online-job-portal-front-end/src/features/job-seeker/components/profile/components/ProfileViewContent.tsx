@@ -70,8 +70,7 @@ function ProfileControlContent({ profile, readOnly = false }: ProfileControlCont
                 <WorkExperienceCard
                   key={exp._id || `exp-${index}`}
                   experience={exp}
-                  onEdit={() => handleEditSection('work')}
-                  readOnly={readOnly}
+                  onEdit={readOnly ? undefined : () => handleEditSection('work')}
                 />
               ))
             )}
@@ -188,8 +187,7 @@ function ProfileControlContent({ profile, readOnly = false }: ProfileControlCont
                 <ProjectCard
                   key={project._id || `proj-${index}`}
                   project={project}
-                  onEdit={() => handleEditSection('projects')}
-                  readOnly={readOnly}
+                  onEdit={readOnly ? undefined : () => handleEditSection('projects')}
                 />
               ))
             )}
@@ -237,8 +235,7 @@ function ProfileControlContent({ profile, readOnly = false }: ProfileControlCont
                 <EducationCard
                   key={edu._id || `edu-${index}`}
                   education={edu}
-                  onEdit={() => handleEditSection('education')}
-                  readOnly={readOnly}
+                  onEdit={readOnly ? undefined : () => handleEditSection('education')}
                 />
               ))
             )}
@@ -271,7 +268,7 @@ function ProfileControlContent({ profile, readOnly = false }: ProfileControlCont
             )}
           </div>
 
-          <CVSection cvUrl={profile.cvUrl} onUpdate={() => { }} readOnly={readOnly} />
+          <CVSection cvUrl={profile.cvUrl} onUpdate={() => { }} isPublicView={readOnly} />
         </section>
       </div>
     </div>

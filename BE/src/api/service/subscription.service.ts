@@ -507,6 +507,8 @@ export const buySubscriptionService = async (
 
   try {
     const transactionId = new mongoose.Types.ObjectId();
+    const orderCode = generateOrderCode();
+    const publicCode = generatePublicCode(orderCode);
 
     // 3. Deduction (Trừ tiền ATOMIC và kiểm tra lại số dư)
     const updatedWallet = await WalletModel.findOneAndUpdate(
@@ -547,6 +549,26 @@ export const buySubscriptionService = async (
       await activeSub.save(session ? { session } : undefined);
     }
 
+    // Persist wallet-funded package purchases in the same payment ledger used
+    // by the recruiter payment-history screen.
+    const payment = await PaymentModel.create(
+      [
+        {
+          orderCode: orderCode.toString(),
+          publicCode,
+          recruiterId: userId,
+          jobPackageId: pkg._id,
+          purpose: "wallet_payment",
+          amount: priceToPay,
+          originAmount: priceToPay,
+          walletBalanceBefore: wallet.balance,
+          description: `Buy subscription package ${pkg.name}`,
+          status: "paid",
+        },
+      ],
+      session ? { session } : undefined
+    );
+
     // 5b. Tính toán EndDate mới (Bắt đầu từ ngày mua)
     const endDate = calculateEndDate(
       startDate,
@@ -558,6 +580,7 @@ export const buySubscriptionService = async (
     const subscription = await SubscriptionModel.create(
       [
         {
+          paymentId: payment[0]._id,
           userId,
           packageId: pkg._id, // Dùng ID gói vừa tìm được
           startDate,

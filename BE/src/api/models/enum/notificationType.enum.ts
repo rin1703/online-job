@@ -14,6 +14,7 @@ export enum NotificationType {
   // JobSeeker notifications
   APPLICATION_STATUS = "application_status",
   INTERVIEW_INVITATION = "interview_invitation",
+  INTERVIEW_RESULT = "interview_result",
   JOB_RECOMMENDATION = "job_recommendation",
   // Wallet notifications
   WALLET_TOPUP = "wallet_topup",

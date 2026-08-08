@@ -8,6 +8,8 @@ import {
     activatePackage,
     updateDisplayOrder
 } from '../controller/subscriptionPackages.controller';
+import { verifyToken, requireRole } from '../middleware/auth.middleware';
+import { UserRole } from '../models/enum/userRole.enum';
 
 // Import middleware xác thực nếu có
 // import { authenticate, authorize } from '../middleware/auth';
@@ -35,8 +37,8 @@ subscriptionPackageRouter.get('/:id', getPackageById);
  * @access  Private/Admin
  */
 subscriptionPackageRouter.post('/', 
-    // authenticate, 
-    // authorize('admin'),
+    verifyToken,
+    requireRole(UserRole.ADMIN),
     createPackage
 );
 
@@ -46,8 +48,8 @@ subscriptionPackageRouter.post('/',
  * @access  Private/Admin
  */
 subscriptionPackageRouter.put('/:id', 
-    // authenticate, 
-    // authorize('admin'),
+    verifyToken,
+    requireRole(UserRole.ADMIN),
     updatePackage
 );
 
@@ -58,8 +60,8 @@ subscriptionPackageRouter.put('/:id',
  * @access  Private/Admin
  */
 subscriptionPackageRouter.delete('/:id', 
-    // authenticate, 
-    // authorize('admin'),
+    verifyToken,
+    requireRole(UserRole.ADMIN),
     deletePackage
 );
 
@@ -69,8 +71,8 @@ subscriptionPackageRouter.delete('/:id',
  * @access  Private/Admin
  */
 subscriptionPackageRouter.patch('/:id/activate', 
-    // authenticate, 
-    // authorize('admin'),
+    verifyToken,
+    requireRole(UserRole.ADMIN),
     activatePackage
 );
 
@@ -80,8 +82,8 @@ subscriptionPackageRouter.patch('/:id/activate',
  * @access  Private/Admin
  */
 subscriptionPackageRouter.put('/display-order/update', 
-    // authenticate, 
-    // authorize('admin'),
+    verifyToken,
+    requireRole(UserRole.ADMIN),
     updateDisplayOrder
 );
 

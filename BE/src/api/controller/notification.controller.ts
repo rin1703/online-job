@@ -112,7 +112,7 @@ export const markNotificationAsRead = async (
   try {
     const notificationId = req.params.notificationId as string;
 
-    const result = await markAsRead(notificationId);
+    const result = await markAsRead(notificationId, req.user!.userId);
 
     if (!result) {
       res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -168,7 +168,7 @@ export const removeNotification = async (
   try {
     const notificationId = req.params.notificationId as string;
 
-    const result = await deleteNotification(notificationId);
+    const result = await deleteNotification(notificationId, req.user!.userId);
 
     if (!result) {
       res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -340,10 +340,11 @@ export const getAllReportsForAdmin = async (
 ): Promise<void> => {
   try {
     const status = req.query.status as string;
+    const reportType = req.query.type as string;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
 
-    const result = await getAllReports(status, page, limit);
+    const result = await getAllReports(status, reportType, page, limit);
 
     res.status(HTTP_STATUS.OK).json({
       success: true,
@@ -609,7 +610,11 @@ export const getInterviewDetails = async (
   try {
     const interviewId = req.params.interviewId as string;
 
-    const interview = await getInterviewById(interviewId);
+    const interview = await getInterviewById(
+      interviewId,
+      req.user?.userId,
+      req.user?.role
+    );
 
     if (!interview) {
       res.status(HTTP_STATUS.NOT_FOUND).json({
@@ -687,7 +692,8 @@ export const submitInterviewResult = async (
     const interview = await updateInterviewResult(
       interviewId,
       dto.passed,
-      dto.feedback
+      dto.feedback,
+      req.user!.userId
     );
 
     if (!interview) {

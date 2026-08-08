@@ -12,7 +12,7 @@ import SignInForm from "@/features/auth/components/SignInForm";
 export default function SignInPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const state = location.state as { message?: string; type?: 'info' | 'success' } | null;
+  const state = location.state as { message?: string; type?: 'info' | 'success' | 'error' } | null;
 
   const handleGoogleLogin = () => {
     // Redirect to backend Google OAuth endpoint

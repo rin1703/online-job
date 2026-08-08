@@ -40,8 +40,6 @@ function JobSeekerTaskMenu() {
   const user = useAppSelector((state) => state.auth.user);
 
   // Chỉ hiển thị cho job_seeker (ẩn với admin và recruiter)
-  if (user?.role !== "job_seeker") return null;
-
   const isMenuPage = menuPaths.some((path) => location.pathname.startsWith(path));
 
   useEffect(() => {
@@ -50,6 +48,9 @@ function JobSeekerTaskMenu() {
       sessionStorage.setItem(PREV_LOCATION_KEY, location.pathname + location.hash);
     }
   }, [location.pathname, location.hash, isMenuPage]);
+
+  // Keep hooks unconditional, then hide the menu for other roles.
+  if (user?.role !== "job_seeker") return null;
 
   const handleNavigation = (path: string) => {
     const prevLocation = sessionStorage.getItem(PREV_LOCATION_KEY) || "/jobs";

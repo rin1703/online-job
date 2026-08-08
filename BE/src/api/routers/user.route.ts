@@ -8,7 +8,8 @@ import {
   validateForgotPassword,
   validateResetPassword,
 } from "../middleware/validation";
-import { verifyToken } from "../middleware/auth.middleware";
+import { verifyToken, requireRole } from "../middleware/auth.middleware";
+import { UserRole } from "../models/enum/userRole.enum";
 import passport from "../../config/passport.config";
 import { googleAuthCallback } from "../controller/googleAuth.controller";
 import {
@@ -21,12 +22,17 @@ import { handleActivateAccount } from "../controller/adminRecruiter.controller";
 const router: Router = Router();
 
 // Remove /user from here since we'll define it in index.router.ts
-router.get("/", getAllUsers);
+router.get("/", verifyToken, requireRole(UserRole.ADMIN), getAllUsers);
 
 /**
  * GET /search-jobseekers - Search job seekers by name or email
  */
-router.get("/search-jobseekers", verifyToken, searchJobSeekers);
+router.get(
+  "/search-jobseekers",
+  verifyToken,
+  requireRole(UserRole.RECRUITER),
+  searchJobSeekers
+);
 
 
 /**

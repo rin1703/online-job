@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Briefcase, ChevronDown, MapPin, Search, TrendingUp, X } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { MapPin, Search, TrendingUp, X } from "lucide-react";
 
 import type { Job } from "../types/job.types";
 
@@ -23,7 +15,6 @@ interface FindJobPageHeaderProps {
 }
 
 export default function FindJobPageHeader({
-  jobs = [],
   searchTerm,
   onSearchChange,
   filters,

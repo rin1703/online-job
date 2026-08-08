@@ -1,7 +1,6 @@
-import type { Application } from '@/features/recruiter/application.type';
 import { ApplicationStatus } from '@/features/recruiter/application.type';
 
-export const mockApplications: Application[] = [
+export const mockApplications = [
   // Page 1 (Items 1-10)
   {
     _id: '1',

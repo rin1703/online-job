@@ -232,17 +232,100 @@ export const verifyPaymentService = async (orderCode: string, recruiterId: strin
 
 
 export const getPaymentHistoryService = async (
-  recruiterId: string
-): Promise<RefundResponseDTO[]> => {
-  const payments = await PaymentModel.find({ recruiterId })
-    .sort({ createdAt: -1 })
-    .lean();
+  recruiterId: string,
+  filters: {
+    search?: string;
+    status?: string;
+    purpose?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    minAmount?: number;
+    maxAmount?: number;
+    page?: number;
+    limit?: number;
+    sortOrder?: "asc" | "desc";
+  } = {}
+) => {
+  const page = Number.isFinite(filters.page) && (filters.page || 0) > 0 ? filters.page! : 1;
+  const limit = Number.isFinite(filters.limit)
+    ? Math.min(Math.max(filters.limit || 10, 1), 100)
+    : 10;
+  const query: any = { recruiterId };
 
-  return payments.map((p) => ({
-    orderCode: p.orderCode,
-    amount: p.amount,
-    status: p.status,
-    refundStatus: p.refundStatus,
-    refundReason: p.refundReason ?? null,
-  }));
+  if (filters.status && ["pending", "paid", "failed", "refunded"].includes(filters.status)) {
+    query.status = filters.status;
+  }
+  if (
+    filters.purpose &&
+    ["subscription", "wallet_topup", "wallet_payment"].includes(filters.purpose)
+  ) {
+    query.purpose = filters.purpose;
+  }
+  if (filters.search?.trim()) {
+    const escaped = filters.search.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    query.$or = [
+      { orderCode: { $regex: escaped, $options: "i" } },
+      { publicCode: { $regex: escaped, $options: "i" } },
+      { description: { $regex: escaped, $options: "i" } },
+    ];
+  }
+  if (filters.dateFrom || filters.dateTo) {
+    query.createdAt = {};
+    if (filters.dateFrom) {
+      const from = new Date(filters.dateFrom);
+      if (!Number.isNaN(from.getTime())) query.createdAt.$gte = from;
+    }
+    if (filters.dateTo) {
+      const to = new Date(filters.dateTo);
+      if (!Number.isNaN(to.getTime())) {
+        to.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = to;
+      }
+    }
+    if (Object.keys(query.createdAt).length === 0) delete query.createdAt;
+  }
+  if (Number.isFinite(filters.minAmount) || Number.isFinite(filters.maxAmount)) {
+    query.amount = {};
+    if (Number.isFinite(filters.minAmount)) query.amount.$gte = filters.minAmount;
+    if (Number.isFinite(filters.maxAmount)) query.amount.$lte = filters.maxAmount;
+  }
+
+  const [payments, total] = await Promise.all([
+    PaymentModel.find(query)
+      .populate("jobPackageId", "name type")
+      .sort({ createdAt: filters.sortOrder === "asc" ? 1 : -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    PaymentModel.countDocuments(query),
+  ]);
+
+  return {
+    payments: payments.map((payment: any) => ({
+      _id: payment._id,
+      orderCode: payment.orderCode,
+      publicCode: payment.publicCode,
+      amount: payment.amount,
+      originAmount: payment.originAmount,
+      description: payment.description,
+      purpose: payment.purpose,
+      status: payment.status,
+      paymentUrl: payment.paymentUrl,
+      package: payment.jobPackageId
+        ? {
+            _id: payment.jobPackageId._id,
+            name: payment.jobPackageId.name,
+            type: payment.jobPackageId.type,
+          }
+        : null,
+      refundStatus: payment.refundStatus,
+      refundReason: payment.refundReason ?? null,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    })),
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Clock, Copy, Flag, Heart, MapPin, MessageCircle, Share2, X } from 'lucide-react';
+import { Check, Clock, Copy, Flag, Heart, MapPin, MessageCircle, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/Btn.tsx'; // Import Job type
 
@@ -14,7 +14,7 @@ import { useFavoriteJobs } from '@/features/job-seeker/api/useFavoriteJobs';
 
 interface JobDetailViewProps {
   job: Job;
-  similarJobs: Job[];
+  similarJobs: unknown[];
 }
 
 const workTypeLabels = {

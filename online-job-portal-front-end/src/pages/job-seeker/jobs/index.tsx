@@ -32,7 +32,6 @@ function Index() {
 
   const {
     searchTerm,
-    setSearchTerm,
     filters,
     currentPage,
     setCurrentPage,

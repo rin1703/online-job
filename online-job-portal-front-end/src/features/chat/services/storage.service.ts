@@ -30,7 +30,7 @@ export const StorageService = {
         text: string,
         attachment?: { url: string; type: "image" | "document"; name: string }
     ): Message {
-        const message: Message = {
+        const message = {
             id: Date.now().toString(),
             senderId,
             receiverId,
@@ -38,7 +38,7 @@ export const StorageService = {
             text,
             createdAt: new Date().toISOString(),
             attachment,
-        };
+        } as unknown as Message;
 
         // Save message
         const key = [senderId, receiverId].sort().join("_");
@@ -49,12 +49,14 @@ export const StorageService = {
         [senderId, receiverId].forEach((userId) => {
             const convs = this.getConversations(userId);
             const partnerId = userId === senderId ? receiverId : senderId;
-            const idx = convs.findIndex((c) => c.partnerId === partnerId);
+            const idx = convs.findIndex(
+                (c) => (c as Conversation & { partnerId?: string }).partnerId === partnerId
+            );
 
             if (idx >= 0) {
                 convs[idx].lastMessage = message;
             } else {
-                convs.push({ partnerId, lastMessage: message });
+                convs.push({ partnerId, lastMessage: message } as unknown as Conversation);
             }
             localStorage.setItem(`conversations_${userId}`, JSON.stringify(convs));
         });

@@ -5,10 +5,11 @@ export interface CurrentSubscription {
   startDate?: string;
   endDate?: string | null;
   status?: string;
+  daysRemaining?: number;
 }
 
 export interface CurrentWithPackagesResponse {
-  success: boolean;
+  ok?: boolean;
   subscription?: CurrentSubscription | null;
   packages?: Array<any>;
 }
@@ -42,6 +43,47 @@ export interface CreatePaymentResponse {
   message: string;
   paymentUrl: string;
   orderCode: string;
+}
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PaymentPurpose = 'subscription' | 'wallet_topup' | 'wallet_payment';
+
+export interface PaymentHistoryItem {
+  _id: string;
+  orderCode: string;
+  publicCode: string;
+  amount: number;
+  originAmount?: number;
+  description: string;
+  purpose: PaymentPurpose;
+  status: PaymentStatus;
+  paymentUrl?: string;
+  package?: { _id: string; name: string; type: string } | null;
+  refundStatus: 'none' | 'pending' | 'success' | 'failed';
+  refundReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PaymentHistoryParams {
+  search?: string;
+  status?: PaymentStatus;
+  purpose?: PaymentPurpose;
+  dateFrom?: string;
+  dateTo?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  page?: number;
+  limit?: number;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface PaymentHistoryResponse {
+  payments: PaymentHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // Subscription Purchase Types

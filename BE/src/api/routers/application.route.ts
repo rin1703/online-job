@@ -60,13 +60,6 @@ router.get("/", verifyToken, validateApplicationFilters, handleGetApplications);
 router.get("/stats", verifyToken, requireRole(UserRole.RECRUITER), handleGetApplicationStats);
 
 /**
- * @route   GET /api/v1/applications/:applicationId
- * @desc    Get application by ID
- * @access  Private (Owner, Recruiter, or Admin)
- */
-router.get("/:applicationId", verifyToken, handleGetApplicationById);
-
-/**
  * @route   PUT /api/v1/applications/:applicationId/review
  * @desc    Review application - APPROVE or REJECT (Recruiter only) ⭐ CHỨC NĂNG CHÍNH
  * @access  Private (Recruiter)
@@ -118,6 +111,7 @@ router.put(
 router.post(
   "/upload/cv",
   verifyToken,
+  requireRole(UserRole.JOB_SEEKER),
   uploadCV.single("cv"),
   handleApplyJob
 );
@@ -159,5 +153,13 @@ router.get(
   requireRole(UserRole.RECRUITER),
   downloadResumeForApplication
 );
+
+/**
+ * @route   GET /api/v1/applications/:applicationId
+ * @desc    Get application by ID
+ * @access  Private (Owner, Recruiter, or Admin)
+ * Keep this dynamic route after all fixed GET routes.
+ */
+router.get("/:applicationId", verifyToken, handleGetApplicationById);
 
 export default router;

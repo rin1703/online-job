@@ -354,7 +354,7 @@ export default function RecruiterInterviewDetailPage() {
           </Card>
 
           {/* Actions */}
-          {interview.status === InterviewStatus.ACCEPTED && (
+          {(interview.status === InterviewStatus.ACCEPTED || interview.status === InterviewStatus.COMPLETED) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

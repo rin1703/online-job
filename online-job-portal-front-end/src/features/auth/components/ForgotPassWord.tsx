@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
-import { Mail, Eye, EyeOff, Globe } from "lucide-react";
+import { Mail, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logoUrl from "@/assets/logo.png";
 import { useForgotPasswordMutation, useResetPasswordMutation } from "@/redux/features/auth/authApi";
 import { toast } from "sonner";
 
@@ -27,8 +26,6 @@ const ForgotPassword: React.FC = () => {
   const [resetPassword, { isLoading: isResetting }] = useResetPasswordMutation();
 
   const goSignIn = () => navigate("/auth/sign-in");
-  const goHome = () => navigate("/");
-
   const isValidEmail = (v: string) => EMAIL_REGEX.test(v);
 
   const handleSendOtp = async () => {

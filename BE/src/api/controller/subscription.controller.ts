@@ -91,11 +91,11 @@ const getRequestParamString = (
  * Lấy subscription hiện tại của user
  */
 export const getCurrentSubscriptionController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const userId = getRequestParamString(req.params.userId, "userId");
+    const userId = req.user!.userId;
 
     const subscription = await subscriptionService.getCurrentSubscription(
       userId
@@ -124,11 +124,11 @@ export const getCurrentSubscriptionController = async (
  * Lấy thông tin gói đang dùng (bao gồm cả free plan)
  */
 export const getSubscriptionInfoController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const userId = getRequestParamString(req.params.userId, "userId");
+    const userId = req.user!.userId;
 
     const info = await subscriptionService.getUserSubscriptionInfo(userId);
 
@@ -148,11 +148,11 @@ export const getSubscriptionInfoController = async (
  * Lấy lịch sử subscriptions
  */
 export const getSubscriptionHistoryController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const userId = getRequestParamString(req.params.userId, "userId");
+    const userId = req.user!.userId;
 
     const history = await subscriptionService.getSubscriptionHistory(userId);
 
@@ -173,11 +173,11 @@ export const getSubscriptionHistoryController = async (
  * Mỗi package sẽ có trường buyed để đánh dấu gói đang sử dụng
  */
 export const getCurrentSubscriptionWithPackagesController = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response
 ) => {
   try {
-    const userId = getRequestParamString(req.params.userId, "userId");
+    const userId = req.user!.userId;
 
     const result = await subscriptionService.getCurrentSubscriptionWithPackages(userId);
 

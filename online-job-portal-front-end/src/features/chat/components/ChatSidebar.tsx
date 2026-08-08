@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Avatar } from "./Avatar";
+import { OnlineStatus } from "./OnlineStatus";
 import { getRelativeTime, getDisplayName } from "../utils/chat.utils";
 import type { Conversation, UserData, ChatUser } from "../types";
 import { Paperclip } from "lucide-react";
@@ -173,6 +174,9 @@ export function ChatSidebar({
                             <div className="flex items-start gap-3">
                                 <div className="relative">
                                     <Avatar name={partnerName} role={partner.role} />
+                                    <div className="mt-1">
+                                        <OnlineStatus isOnline={isOnline} />
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 min-w-0">

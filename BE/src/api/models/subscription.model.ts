@@ -13,6 +13,11 @@ const SubscriptionSchema = new mongoose.Schema(
       ref: "SubscriptionPackage",
       required: true,
     },
+    paymentId: {
+      type: Schema.Types.ObjectId,
+      ref: "Payment",
+      required: false,
+    },
     startDate: {
       type: Date,
       required: true,

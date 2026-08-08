@@ -8,6 +8,7 @@ import {
   sendInterviewInvitationEmail,
   sendInterviewUpdateEmail,
   sendInterviewResponseEmail,
+  sendInterviewResultEmail,
   sendReportNotificationEmail,
   sendBroadcastEmail,
   sendNewApplicationEmail,
@@ -65,7 +66,8 @@ export const createNotification = async (data: {
       },
       metadata: data.metadata,
       isRead: false,
-      sentViaEmail: data.sendEmail || false,
+      // Set to true only after the mail transport confirms delivery.
+      sentViaEmail: false,
     });
 
     const savedNotification = await notification.save();
@@ -206,10 +208,16 @@ export const getNotificationById = async (
 /**
  * Mark one notification as read
  */
-export const markAsRead = async (notificationId: string): Promise<boolean> => {
+export const markAsRead = async (
+  notificationId: string,
+  userId: string
+): Promise<boolean> => {
   try {
-    const result = await Notification.findByIdAndUpdate(
-      notificationId,
+    const result = await Notification.findOneAndUpdate(
+      {
+        _id: notificationId,
+        $expr: { $eq: [{ $toString: "$recipient.userId" }, userId] },
+      },
       {
         isRead: true,
         readAt: new Date(),
@@ -274,10 +282,14 @@ export const markAllAsRead = async (userId: string): Promise<number> => {
  * Delete one notification
  */
 export const deleteNotification = async (
-  notificationId: string
+  notificationId: string,
+  userId: string
 ): Promise<boolean> => {
   try {
-    const result = await Notification.findByIdAndDelete(notificationId);
+    const result = await Notification.findOneAndDelete({
+      _id: notificationId,
+      $expr: { $eq: [{ $toString: "$recipient.userId" }, userId] },
+    });
     return result ? true : false;
   } catch (error) {
     throw error;
@@ -355,7 +367,7 @@ export const sendApplicationStatusNotification = async (
 
     const finalContent = note ? `${content}\n\nNote: ${note}` : content;
 
-    await createNotification({
+    const notification = await createNotification({
       title,
       content: finalContent,
       type: NotificationType.APPLICATION_STATUS,
@@ -371,16 +383,19 @@ export const sendApplicationStatusNotification = async (
         actionUrl: `/applications/${applicationId}`,
         status,
       },
-      sendEmail: true,
+      sendEmail: false,
     });
 
-    await sendApplicationStatusEmail(
-      (jobSeeker as any).email,
-      (jobSeeker as any).firstName + " " + (jobSeeker as any).lastName,
-      jobTitle,
-      recruiterName,
-      status,
-      note
+    await deliverNotificationEmail(
+      notification,
+      () => sendApplicationStatusEmail(
+        (jobSeeker as any).email,
+        (jobSeeker as any).firstName + " " + (jobSeeker as any).lastName,
+        jobTitle,
+        recruiterName,
+        status,
+        note
+      )
     );
   } catch (error) {
     throw error;
@@ -510,7 +525,7 @@ export const sendInterviewInvitationNotification = async (
     const content = `You are invited to interview for "${jobTitle}" at "${companyName}" on ${scheduledDate.toLocaleDateString("en-US")} at ${scheduledTime}`;
 
     // Create in-app notification
-    await createNotification({
+    const notification = await createNotification({
       title,
       content,
       type: NotificationType.INTERVIEW_INVITATION,
@@ -526,20 +541,23 @@ export const sendInterviewInvitationNotification = async (
         interviewId,
         actionUrl: `/interviews/${interviewId}/respond`,
       },
-      sendEmail: true,
+      sendEmail: false,
     });
 
     // Gửi email
-    await sendInterviewInvitationEmail(
-      (jobSeeker as any).email,
-      (jobSeeker as any).firstName + " " + (jobSeeker as any).lastName,
-      jobTitle,
-      companyName,
-      scheduledDate,
-      scheduledTime,
-      location,
-      meetingLink,
-      note
+    await deliverNotificationEmail(
+      notification,
+      () => sendInterviewInvitationEmail(
+        (jobSeeker as any).email,
+        (jobSeeker as any).firstName + " " + (jobSeeker as any).lastName,
+        jobTitle,
+        companyName,
+        scheduledDate,
+        scheduledTime,
+        location,
+        meetingLink,
+        note
+      )
     );
   } catch (error) {
     throw error;
@@ -607,6 +625,61 @@ export const sendInterviewResponseNotification = async (
 /**
  * Gửi thông báo cập nhật lịch phỏng vấn cho JobSeeker
  */
+/**
+ * Send the final interview result to the interviewed job seeker (in-app + email).
+ */
+export const sendInterviewResultNotification = async (
+  jobSeekerId: string,
+  interviewId: string,
+  jobTitle: string,
+  passed: boolean,
+  feedback: string,
+  recruiterId: string
+): Promise<void> => {
+  const [jobSeeker, recruiter] = await Promise.all([
+    User.findById(jobSeekerId),
+    User.findById(recruiterId),
+  ]);
+
+  if (!jobSeeker || !recruiter) {
+    throw new Error("JobSeeker or Recruiter not found");
+  }
+
+  const jobSeekerName = `${(jobSeeker as any).firstName} ${(jobSeeker as any).lastName}`.trim();
+  const recruiterName = `${(recruiter as any).firstName} ${(recruiter as any).lastName}`.trim();
+  const notification = await createNotification({
+    title: passed ? "Interview Passed" : "Interview Result Available",
+    content: passed
+      ? `Congratulations! You passed the interview for "${jobTitle}". Feedback: ${feedback}`
+      : `The result for your interview for "${jobTitle}" is available. Feedback: ${feedback}`,
+    type: NotificationType.INTERVIEW_RESULT,
+    sender: {
+      userId: recruiterId,
+      role: UserRole.RECRUITER,
+      name: recruiterName || "Recruiter",
+    },
+    recipientId: jobSeekerId,
+    recipientEmail: (jobSeeker as any).email,
+    recipientRole: UserRole.JOB_SEEKER,
+    metadata: {
+      interviewId,
+      status: passed ? "passed" : "failed",
+      actionUrl: `/job-seeker/interviews/${interviewId}`,
+    },
+    sendEmail: true,
+  });
+
+  await deliverNotificationEmail(notification, () =>
+    sendInterviewResultEmail(
+      (jobSeeker as any).email,
+      jobSeekerName || "Candidate",
+      jobTitle,
+      passed,
+      feedback
+    )
+  );
+};
+
 export const sendInterviewUpdateNotification = async (
   jobSeekerId: string,
   interviewId: string,
@@ -676,9 +749,11 @@ export const sendInterviewUpdateNotification = async (
  */
 export const sendReportNotification = async (
   reporterName: string,
+  reporterRole: UserRole,
   reportType: "job" | "user",
   reason: string,
-  description: string
+  description: string,
+  reportId: string
 ): Promise<void> => {
   try {
     // Get all admins
@@ -692,7 +767,7 @@ export const sendReportNotification = async (
     for (const admin of admins) {
       const title = reportType === "job" ? "Job Report" : "User Report";
 
-      await createNotification({
+      const notification = await createNotification({
         title,
         content: `${reporterName} has reported a ${reportType === "job" ? "job" : "user"}. Reason: ${reason}`,
         type:
@@ -700,25 +775,28 @@ export const sendReportNotification = async (
             ? NotificationType.REPORT_JOB
             : NotificationType.REPORT_USER,
         sender: {
-          role: UserRole.JOB_SEEKER,
+          role: reporterRole,
           name: reporterName,
         },
         recipientId: admin._id.toString(),
         recipientEmail: (admin as any).email,
         recipientRole: UserRole.ADMIN,
         metadata: {
-          actionUrl: reportType === "job" ? `/reports/job` : `/reports/user`
+          reportId,
+          actionUrl: "/admin/reports"
         },
-        sendEmail: true,
+        sendEmail: false,
       });
 
-      // Send email
-      await sendReportNotificationEmail(
-        (admin as any).email,
-        reporterName,
-        reportType,
-        reason,
-        description
+      await deliverNotificationEmail(
+        notification,
+        () => sendReportNotificationEmail(
+          (admin as any).email,
+          reporterName,
+          reportType,
+          reason,
+          description
+        )
       );
     }
   } catch (error) {

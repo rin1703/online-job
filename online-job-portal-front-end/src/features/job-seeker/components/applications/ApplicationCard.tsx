@@ -12,6 +12,7 @@ interface ApplicationCardProps {
 
 export function ApplicationCard({ application, onViewDetail }: ApplicationCardProps) {
   const statusConfig = STATUS_CONFIG[application.status];
+  const job = application.jobId;
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -22,7 +23,7 @@ export function ApplicationCard({ application, onViewDetail }: ApplicationCardPr
             {/* Job title and status */}
             <div className="flex items-start justify-between gap-3">
               <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                {application.jobId.title}
+                {job?.title || "Job no longer available"}
               </h3>
               <Badge className={`${statusConfig.color} shrink-0`}>
                 {statusConfig.icon} {statusConfig.label}
@@ -32,21 +33,21 @@ export function ApplicationCard({ application, onViewDetail }: ApplicationCardPr
             {/* Job details */}
             <div className="space-y-2 text-sm text-gray-600">
               {/* Salary range */}
-              {application.jobId.salaryMin && application.jobId.salaryMax && (
+              {job?.salaryMin && job?.salaryMax && (
                 <div className="flex items-center gap-2">
                   <DollarSign className="w-4 h-4 shrink-0" />
                   <span>
-                    {formatSalary(application.jobId.salaryMin)} -{" "}
-                    {formatSalary(application.jobId.salaryMax)} VND
+                    {formatSalary(job.salaryMin)} -{" "}
+                    {formatSalary(job.salaryMax)} VND
                   </span>
                 </div>
               )}
 
               {/* Experience level */}
-              {application.jobId.experienceLevel && (
+              {job?.experienceLevel && (
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-4 h-4 shrink-0" />
-                  <span>{application.jobId.experienceLevel}</span>
+                  <span>{job.experienceLevel}</span>
                 </div>
               )}
 

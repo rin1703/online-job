@@ -161,7 +161,7 @@ export const validateApplicationFilters = (
   res: Response,
   next: NextFunction
 ): void => {
-  const { status, page, limit, sortBy, sortOrder } = req.query;
+  const { status, search, page, limit, sortBy, sortOrder } = req.query;
 
   const errors: string[] = [];
 
@@ -170,6 +170,10 @@ export const validateApplicationFilters = (
     if (!validStatuses.includes(status as string)) {
       errors.push(`Invalid status. Valid values: ${validStatuses.join(", ")}`);
     }
+  }
+
+  if (search && (typeof search !== "string" || search.trim().length > 100)) {
+    errors.push("Search term must be at most 100 characters");
   }
 
   if (page && (isNaN(Number(page)) || Number(page) < 1)) {

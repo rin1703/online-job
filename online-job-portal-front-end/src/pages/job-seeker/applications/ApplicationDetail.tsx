@@ -161,8 +161,8 @@ export default function ApplicationDetail() {
               <div>
                 <p className="text-sm text-gray-600">Salary Range</p>
                 <p className="font-semibold">
-                  {formatSalary(application.jobId.salaryMin)} -{" "}
-                  {formatSalary(application.jobId.salaryMax)} USD
+                  {formatSalary(application.jobId.salaryMin ?? 0)} -{" "}
+                  {formatSalary(application.jobId.salaryMax ?? 0)} USD
                 </p>
               </div>
               <div>

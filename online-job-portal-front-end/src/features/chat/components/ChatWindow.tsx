@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "./Avatar";
 import { OnlineStatus } from "./OnlineStatus";
@@ -84,6 +84,7 @@ export function ChatWindow({
                             >
                                 {partner.role === "recruiter" ? "💼 Recruiter" : "🎯 Job Seeker"}
                             </span>
+                            <OnlineStatus isOnline={onlineUsers.has(partner.email)} />
                         </div>
 
                     </div>

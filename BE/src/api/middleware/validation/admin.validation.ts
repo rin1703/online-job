@@ -7,7 +7,6 @@ import { Request, Response, NextFunction } from "express";
 import { sendBadRequestResponse } from "../../../helper/response.helper";
 import { BanDuration } from "../../models/enum/banDuration.enum";
 import { UserRole } from "../../models/enum/userRole.enum";
-import { VALIDATION_CONSTANTS } from "../../../helper/constants.helper";
 
 /**
  * Helper function to validate date format (YYYY-MM-DD)
@@ -132,10 +131,11 @@ export const validateUserAccountList = (
     errors.push("Trạng thái không hợp lệ. Các trạng thái hợp lệ: active, inactive, locked");
   }
 
-  // Validate search (email format)
+  // Validate free-text search (name, email, or phone)
   if (search) {
-    const isValidEmail = VALIDATION_CONSTANTS.EMAIL_REGEX.test(String(search));
-    if (!isValidEmail) {
+    const normalizedSearch = String(search).trim();
+    const isValidSearch = normalizedSearch.length >= 1 && normalizedSearch.length <= 100;
+    if (!isValidSearch) {
       errors.push("Tìm kiếm phải là email hợp lệ (ví dụ: nguyenvana@example.com)");
     }
   }

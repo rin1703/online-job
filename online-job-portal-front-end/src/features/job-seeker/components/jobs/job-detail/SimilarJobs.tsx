@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom';
 import { Bookmark } from 'lucide-react';
-import type { Job } from '@/features/job-seeker/components/jobs/types/job.types.tsx';
 import { PAGINATION, UI_DIMENSIONS } from '@/features/job-seeker/constants/jobseeker.constants';
 import { Badge } from '@/components/ui/badge';
-import { ButtonLowercase } from '@/components/ui/button-lowercase';
 
 interface SimilarJobsProps {
-  similarJobs: Job[];
+  similarJobs: unknown[];
 }
 
 interface SimilarJobCardProps {
@@ -101,7 +99,7 @@ export default function SimilarJobs({ similarJobs }: SimilarJobsProps) {
           <>
             {similarJobs
               .slice(0, PAGINATION.SIMILAR_JOBS_LIMIT)
-              .map((job) => (
+              .map((job: any) => (
                 <SimilarJobCard
                   key={job.id}
                   job={job}

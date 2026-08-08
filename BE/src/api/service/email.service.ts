@@ -218,6 +218,50 @@ export const sendInterviewResponseEmail = async (
   }
 };
 
+// Notify a job seeker when a recruiter publishes the interview result.
+export const sendInterviewResultEmail = async (
+  email: string,
+  jobSeekerName: string,
+  jobTitle: string,
+  passed: boolean,
+  feedback: string
+): Promise<boolean> => {
+  try {
+    const statusText = passed ? "Passed" : "Not selected";
+    const statusColor = passed ? "#4CAF50" : "#f44336";
+
+    await transporter.sendMail({
+      from: `"Job Portal" <${process.env.EMAIL_FROM}>`,
+      to: email,
+      subject: `Interview result - ${jobTitle}`,
+      html: `
+        <div style="${baseStyles}">
+          <div style="${headerStyle}">
+            <h2 style="margin: 0;">Interview Result</h2>
+          </div>
+          <div style="padding: 30px; background: white;">
+            <p>Hello ${jobSeekerName},</p>
+            <p>The recruiter has published the result of your interview.</p>
+            <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 10px 0;"><strong>Position:</strong> ${jobTitle}</p>
+              <p style="margin: 10px 0; color: ${statusColor}; font-size: 16px; font-weight: bold;">${statusText}</p>
+              <p style="margin: 10px 0;"><strong>Feedback:</strong> ${feedback}</p>
+            </div>
+            <p>You can review the result in the Job Portal.</p>
+          </div>
+          <div style="${footerStyle}">
+            <p>&copy; 2025 Job Portal. All rights reserved.</p>
+          </div>
+        </div>
+      `,
+    });
+
+    return true;
+  } catch (error: any) {
+    throw new Error(`Unable to send interview result email: ${error.message}`);
+  }
+};
+
 // Notify a recruiter when a job seeker submits a new application
 export const sendNewApplicationEmail = async (
   email: string,

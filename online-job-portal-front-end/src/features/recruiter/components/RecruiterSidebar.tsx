@@ -1,7 +1,6 @@
 import logo from "@/assets/logo.png";
 import { NavLink, Link } from "react-router-dom";
 import {
-  LayoutGrid,
   FileText,
   Package,
   UserPlus,
@@ -9,6 +8,7 @@ import {
   Calendar,
   MessageCircle,
   BriefcaseBusiness,
+  CreditCard,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -55,6 +55,11 @@ const platformItems: NavItem[] = [
     title: "Package Management",
     icon: Package,
     path: "/recruiter/packages",
+  },
+  {
+    title: "Payment History",
+    icon: CreditCard,
+    path: "/recruiter/payments",
   },
   {
     title: "Application Management",

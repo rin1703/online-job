@@ -20,15 +20,35 @@ router.post(
 );
 
 // Lấy subscription hiện tại của user (chỉ active subscription)
-router.get("/current/:userId", getCurrentSubscriptionController);
+router.get(
+  "/current/:userId",
+  authMiddleware,
+  requireRole(UserRole.RECRUITER),
+  getCurrentSubscriptionController
+);
 
 // Lấy subscription hiện tại kèm danh sách tất cả packages (với trường buyed)
-router.get("/current-with-packages/:userId", getCurrentSubscriptionWithPackagesController);
+router.get(
+  "/current-with-packages/:userId",
+  authMiddleware,
+  requireRole(UserRole.RECRUITER),
+  getCurrentSubscriptionWithPackagesController
+);
 
 // Lấy thông tin gói đang dùng (bao gồm free plan nếu không có subscription)
-router.get("/info/:userId", getSubscriptionInfoController);
+router.get(
+  "/info/:userId",
+  authMiddleware,
+  requireRole(UserRole.RECRUITER),
+  getSubscriptionInfoController
+);
 
 // Lấy lịch sử tất cả subscriptions
-router.get("/history/:userId", getSubscriptionHistoryController);
+router.get(
+  "/history/:userId",
+  authMiddleware,
+  requireRole(UserRole.RECRUITER),
+  getSubscriptionHistoryController
+);
 
 export default router;

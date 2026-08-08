@@ -126,9 +126,11 @@ export const createJobReport = async (data: {
     // Gửi notification cho admin
     await sendReportNotification(
       (reporter as any).firstName + " " + (reporter as any).lastName,
+      (reporter as any).role,
       "job",
       data.reason,
-      data.description
+      data.description,
+      savedReport._id.toString()
     );
 
     return savedReport;
@@ -179,9 +181,11 @@ export const createUserReport = async (data: {
     // Gửi notification cho admin
     await sendReportNotification(
       (reporter as any).firstName + " " + (reporter as any).lastName,
+      (reporter as any).role,
       "user",
       data.reason,
-      data.description
+      data.description,
+      savedReport._id.toString()
     );
 
     return savedReport;
@@ -197,6 +201,7 @@ export const createUserReport = async (data: {
  */
 export const getAllReports = async (
   status?: string,
+  reportType?: string,
   page: number = 1,
   limit: number = 10
 ): Promise<{
@@ -209,6 +214,9 @@ export const getAllReports = async (
     const query: any = {};
     if (status) {
       (query as any).status = status;
+    }
+    if (reportType) {
+      (query as any).reportType = reportType;
     }
 
     const skip = (page - 1) * limit;

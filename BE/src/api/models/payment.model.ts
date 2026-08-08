@@ -8,7 +8,7 @@ const PaymentSchema = new mongoose.Schema(
 
     jobPackageId: {
       type: Schema.Types.ObjectId,
-      ref: "JobPackage",
+      ref: "SubscriptionPackage",
       required: false,
     },
 

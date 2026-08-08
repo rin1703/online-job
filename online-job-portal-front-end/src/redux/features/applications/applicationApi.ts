@@ -118,6 +118,7 @@ export interface WithdrawApplicationRequest {
 export interface GetApplicationsParams {
   jobId?: string;
   status?: string;
+  search?: string;
   page?: number;
   limit?: number;
   sortBy?: 'appliedAt' | 'reviewedAt' | 'status';
@@ -206,6 +207,7 @@ export const applicationApi = baseApi.injectEndpoints({
       },
       {
         status?: string;
+        search?: string;
         jobId?: string;
         page?: number;
         limit?: number;

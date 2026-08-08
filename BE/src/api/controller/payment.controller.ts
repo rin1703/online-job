@@ -47,7 +47,18 @@ export const getPaymentHistory = async (
 ) => {
   try {
     const recruiterId = req.user!.userId;
-    const result = await getPaymentHistoryService(recruiterId);
+    const result = await getPaymentHistoryService(recruiterId, {
+      search: req.query.search as string,
+      status: req.query.status as string,
+      purpose: req.query.purpose as string,
+      dateFrom: req.query.dateFrom as string,
+      dateTo: req.query.dateTo as string,
+      minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+      maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
+      page: req.query.page ? Number(req.query.page) : 1,
+      limit: req.query.limit ? Number(req.query.limit) : 10,
+      sortOrder: req.query.sortOrder === "asc" ? "asc" : "desc",
+    });
 
     return res.status(200).json(result);
   } catch (err: any) {

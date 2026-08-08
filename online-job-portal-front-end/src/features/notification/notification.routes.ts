@@ -59,6 +59,7 @@ export const getDefaultNotificationRoute = (
     }
 
     case NotificationType.INTERVIEW_INVITATION:
+    case NotificationType.INTERVIEW_RESULT:
       return metadata?.interviewId
         ? `/job-seeker/interviews/${metadata.interviewId}`
         : '/job-seeker/interviews';
@@ -97,7 +98,11 @@ export const normalizeNotificationUrl = (
   }
 ): string => {
   // ✅ Priority 1: Use metadata.interviewId for interview notifications
-  if (type === NotificationType.INTERVIEW_INVITATION && metadata?.interviewId) {
+  if (
+    (type === NotificationType.INTERVIEW_INVITATION ||
+      type === NotificationType.INTERVIEW_RESULT) &&
+    metadata?.interviewId
+  ) {
     return `/job-seeker/interviews/${metadata.interviewId}`;
   }
 
@@ -157,6 +162,7 @@ const getRolePrefixByNotificationType = (type: NotificationType): string => {
 
     case NotificationType.APPLICATION_STATUS:
     case NotificationType.INTERVIEW_INVITATION:
+    case NotificationType.INTERVIEW_RESULT:
       return '/job-seeker';
 
     case NotificationType.REPORT_JOB:

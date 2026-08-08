@@ -9,7 +9,7 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const orderCode = searchParams.get('orderCode');
   
-  const [verifyPayment, { isLoading }] = useVerifyPaymentMutation();
+  const [verifyPayment] = useVerifyPaymentMutation();
   const [verificationStatus, setVerificationStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [message, setMessage] = useState('Đang xác thực giao dịch thanh toán...');
 

@@ -102,6 +102,7 @@ export const handleGetApplications = async (
     const filter = new ApplicationFilterDTO({
       jobId: req.query.jobId as string,
       status: req.query.status as any,
+      search: req.query.search as string,
       page: req.query.page ? Number(req.query.page) : undefined,
       limit: req.query.limit ? Number(req.query.limit) : undefined,
       sortBy: req.query.sortBy as any,

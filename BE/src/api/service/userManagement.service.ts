@@ -274,7 +274,15 @@ function buildUserQueryFilter(dto: GetUserAccountListDTO): any {
   if (dto.search) {
     const escapedSearch = dto.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const searchRegex = new RegExp(escapedSearch, "i");
-    filter.email = searchRegex;
+    filter.$and = filter.$and || [];
+    filter.$and.push({
+      $or: [
+        { email: searchRegex },
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { phone: searchRegex },
+      ],
+    });
   }
   if (dto.dateFrom || dto.dateTo) {
     filter.createdAt = {};
